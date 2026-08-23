@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../providers/auth_notifier.dart';
+import '../../home/presentation/screens/home_screen.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -26,7 +26,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     ref.read(authNotifierProvider.notifier).signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -36,6 +35,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => const HomeScreen(),
+          ),
+          (route) => false,
+        );
+      }
       if (next.status == AuthStatus.error && next.failure != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -84,11 +91,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                       validator: (value) {
                         final email = value?.trim() ?? '';
-
                         if (email.isEmpty || !email.contains('@')) {
                           return 'Please enter a valid email';
                         }
-
                         return null;
                       },
                     ),
@@ -106,7 +111,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         if (value == null || value.length < 6) {
                           return 'Password must be at least 6 characters';
                         }
-
                         return null;
                       },
                       onFieldSubmitted: (_) {
