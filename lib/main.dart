@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'core/theme/app_theme.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 
 void main() {
@@ -15,7 +14,10 @@ class EduvaApp extends StatelessWidget {
     return MaterialApp(
       title: 'EDUVA',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: const Color(0xFF2563EB),
+      ),
       home: const SplashScreen(),
     );
   }
