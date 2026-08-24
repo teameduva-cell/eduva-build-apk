@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         backgroundColor: const Color(0xFF4F46E5),
         elevation: 4,
-        shape: const CircleBorder(),
+        shape: const CircleBorder),
         child: const Icon(Icons.auto_awesome, color: Colors.white, size: 26),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -79,8 +79,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends StatefulWidget {
   const _HomeContent();
+
+  @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent> {
+  final TextEditingController _searchController = TextEditingController();
+
+  void _askAI(String query) {
+    if (query.trim().isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AIChatScreen(initialQuery: query.trim()),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,28 +181,59 @@ class _HomeContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Search Bar
+              // Comprehensive AI Search Bar (Type, Camera, Mic, Upload & Ask)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.search, color: Color(0xFF94A3B8)),
-                    SizedBox(width: 8),
+                  children: [
+                    const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Question type karein ya chapter search...',
-                          hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        controller: _searchController,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: _askAI,
+                        decoration: const InputDecoration(
+                          hintText: 'Question type karein...',
+                          hintStyle: TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                           border: InputBorder.none,
+                          isDense: true,
                         ),
                       ),
                     ),
-                    Icon(Icons.mic_none, color: Color(0xFF4F46E5)),
+                    IconButton(
+                      icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF8B5CF6), size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _askAI("📷 [Photo Doubt: Scan and Solve this problem]"),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.mic_none, color: Color(0xFFEC4899), size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _askAI("🎙️ [Voice Question: Explain this concept simply]"),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.upload_file_outlined, color: Color(0xFF0EA5E9), size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _askAI("📄 [PDF Upload Doubt: Explain chapter topics]"),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.send_rounded, color: Color(0xFF4F46E5), size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _askAI(_searchController.text),
+                    ),
                   ],
                 ),
               ),
@@ -196,29 +244,42 @@ class _HomeContent extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
+              // 4 Direct Action Cards
               Row(
                 children: [
-                  _buildAskItem(context, Icons.camera_alt_rounded, 'Camera', 'Photo kheecho', const Color(0xFF8B5CF6)),
+                  _buildAskItem(Icons.camera_alt_rounded, 'Camera', 'Photo kheecho', const Color(0xFF8B5CF6), () {
+                    _askAI("📷 [Photo Doubt: Scan and solve the problem from image]");
+                  }),
                   const SizedBox(width: 8),
-                  _buildAskItem(context, Icons.keyboard_rounded, 'Type', 'Likhe karke', const Color(0xFF10B981)),
+                  _buildAskItem(Icons.keyboard_rounded, 'Type', 'Likhe karke', const Color(0xFF10B981), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AIChatScreen()));
+                  }),
                   const SizedBox(width: 8),
-                  _buildAskItem(context, Icons.mic_rounded, 'Voice', 'Bol kar', const Color(0xFFEC4899)),
+                  _buildAskItem(Icons.mic_rounded, 'Voice', 'Bol kar', const Color(0xFFEC4899), () {
+                    _askAI("🎙️ [Voice Question: Explain Pythagoras theorem and formulas]");
+                  }),
                   const SizedBox(width: 8),
-                  _buildAskItem(context, Icons.upload_file_rounded, 'Upload PDF', 'PDF se', const Color(0xFF0EA5E9)),
+                  _buildAskItem(Icons.upload_file_rounded, 'Upload PDF', 'PDF se', const Color(0xFF0EA5E9), () {
+                    _askAI("📄 [PDF Document: Explain key definitions and summary]");
+                  }),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // Feature Icons (Clickable to Career & Support)
+              // Feature Icons Grid
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildFeature(context, Icons.track_changes, 'Mock Test', const Color(0xFF8B5CF6), () {}),
-                  _buildFeature(context, Icons.menu_book, 'Material', const Color(0xFFF59E0B), () {}),
-                  _buildFeature(context, Icons.explore, 'Career', const Color(0xFF3B82F6), () {
+                  _buildFeature(Icons.track_changes, 'Mock Test', const Color(0xFF8B5CF6), () {
+                    _askAI("Generate a 5-question Mock Test with answers");
+                  }),
+                  _buildFeature(Icons.menu_book, 'Material', const Color(0xFFF59E0B), () {
+                    _askAI("Show Class 10/12 Science & Maths Study Material");
+                  }),
+                  _buildFeature(Icons.explore, 'Career', const Color(0xFF3B82F6), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CareerGuidanceScreen()));
                   }),
-                  _buildFeature(context, Icons.help, 'Support', const Color(0xFF10B981), () {
+                  _buildFeature(Icons.help, 'Support', const Color(0xFF10B981), () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
                   }),
                 ],
@@ -231,10 +292,10 @@ class _HomeContent extends StatelessWidget {
     );
   }
 
-  Widget _buildAskItem(BuildContext context, IconData icon, String title, String subtitle, Color color) {
+  Widget _buildAskItem(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
     return Expanded(
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AIChatScreen())),
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
@@ -251,7 +312,7 @@ class _HomeContent extends StatelessWidget {
     );
   }
 
-  Widget _buildFeature(BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
+  Widget _buildFeature(IconData icon, String title, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Column(
