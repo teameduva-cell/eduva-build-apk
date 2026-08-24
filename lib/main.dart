@@ -42,12 +42,12 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-  final List<Widget> _pages = [
-    const AboutUsScreen(),
-    const AIClassroomScreen(),
-    const AIChatScreen(),
-    const CareerGuidanceScreen(),
-    const ProfileScreen(),
+  final List<Widget> _pages = const [
+    AboutUsScreen(),
+    AIClassroomScreen(),
+    AIChatScreen(),
+    CareerGuidanceScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -76,7 +76,7 @@ class _MainShellState extends State<MainShell> {
                 GestureDetector(
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("📷 Instant Camera Doubt Solver Ready! Point at any book question.")),
+                      const SnackBar(content: Text("Instant Camera Doubt Solver Ready! Point at any book question.")),
                     );
                     setState(() => _currentIndex = 2);
                   },
@@ -210,7 +210,7 @@ class AboutUsScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: Color(0xFFDBEAFE),
                       ),
-                      child: const Icon(Icons.face_retouching_natural, size: 80, color: Color(0xFF1D4ED8)),
+                      child: const Icon(Icons.face_retouching_natural, size: 70, color: Color(0xFF1D4ED8)),
                     ),
                   ),
                 ],
