@@ -87,7 +87,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         (user) => state = AuthState.authenticated(user),
       );
     } catch (e) {
-      state = AuthState.error(ServerFailure(message: e.toString()));
+      state = AuthState.error(ServerFailure(e.toString()));
     }
   }
 
@@ -118,7 +118,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         (user) => state = AuthState.authenticated(user),
       );
     } catch (e) {
-      state = AuthState.error(ServerFailure(message: e.toString()));
+      state = AuthState.error(ServerFailure(e.toString()));
     }
   }
 
