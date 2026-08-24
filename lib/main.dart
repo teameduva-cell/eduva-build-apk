@@ -42,7 +42,6 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-
   final List<Widget> _pages = [
     const AboutUsScreen(),
     const AIClassroomScreen(),
@@ -398,14 +397,17 @@ class _AIChatScreenState extends State<AIChatScreen> {
   void _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
     setState(() => _messages.add({'role': 'user', 'text': text}));
     _controller.clear();
+
     try {
       final res = await http.post(
         Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'contents': [{'parts': [{'text': text}]}]}),
       );
+
       if (res.statusCode == 200) {
         final d = jsonDecode(res.body);
         final ans = d['candidates'][0]['content']['parts'][0]['text'];
