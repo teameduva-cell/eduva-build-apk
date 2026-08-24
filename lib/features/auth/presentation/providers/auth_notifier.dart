@@ -4,7 +4,6 @@ import '../../domain/entities/user_entity.dart';
 import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/sign_in.dart';
 import '../../domain/usecases/sign_out.dart';
-import '../../domain/usecases/sign_up.dart';
 import 'auth_providers.dart';
 import '../../../../errors/failures.dart';
 
@@ -81,37 +80,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await signInUseCase(email: email, password: password).timeout(
         const Duration(seconds: 10),
         onTimeout: () => throw TimeoutException('Sign in timed out. Check connection.'),
-      );
-      result.fold(
-        (failure) => state = AuthState.error(failure),
-        (user) => state = AuthState.authenticated(user),
-      );
-    } catch (e) {
-      state = AuthState.error(ServerFailure(e.toString()));
-    }
-  }
-
-  Future<void> signUp({
-    required String name,
-    required String email,
-    required String password,
-    required String studentClass,
-    required String dreamCareer,
-    required String preferredLanguage,
-  }) async {
-    state = const AuthState.loading();
-    try {
-      final signUpUseCase = ref.read(signUpProvider);
-      final result = await signUpUseCase(
-        name: name,
-        email: email,
-        password: password,
-        studentClass: studentClass,
-        dreamCareer: dreamCareer,
-        preferredLanguage: preferredLanguage,
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw TimeoutException('Sign up timed out.'),
       );
       result.fold(
         (failure) => state = AuthState.error(failure),
