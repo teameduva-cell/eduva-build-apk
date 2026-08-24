@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../auth/presentation/screens/sign_in_screen.dart';
+import '../../../auth/presentation/screens/sign_in_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
