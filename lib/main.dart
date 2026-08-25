@@ -116,7 +116,7 @@ class _MainShellState extends State<MainShell> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: dynamic_size(isSelected),
           children: [
             Icon(
               isSelected ? activeIcon : icon,
@@ -137,6 +137,8 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
+
+  MainAxisSize dynamic_size(bool _) => MainAxisSize.min;
 }
 
 // 1. ABOUT US SCREEN
