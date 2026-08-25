@@ -146,9 +146,7 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
   }
 }
 
-// ==========================================
-// 1. HOME / ABOUT US (With Official 3D Edu Sir)
-// ==========================================
+// 1. HOME SCREEN (About Us & Edu Sir 3D Banner)
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -181,7 +179,6 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Header Card With Edu Sir Character
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
@@ -219,7 +216,6 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Render 3D Board Character Image
                   ClipRRect(
                     borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
                     child: Image.asset(
@@ -302,9 +298,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ==========================================
 // 2. AI CLASSROOM
-// ==========================================
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -330,7 +324,11 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
                     onPressed: () => setState(() => is3DMode = false),
                     icon: const Icon(Icons.draw, size: 16),
                     label: const Text("Board Mode"),
-                    style: ElevatedButton.styleFrom(backgroundColor: !is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: !is3DMode ? Colors.white : Colors.black87),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: !is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200,
+                      foregroundColor: !is3DMode ? Colors.white : Colors.black87,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -339,7 +337,11 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
                     onPressed: () => setState(() => is3DMode = true),
                     icon: const Icon(Icons.view_in_ar, size: 16),
                     label: const Text("3D Mode"),
-                    style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: is3DMode ? Colors.white : Colors.black87),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200,
+                      foregroundColor: is3DMode ? Colors.white : Colors.black87,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
               ],
@@ -374,9 +376,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
-// ==========================================
-// 3. ASK DOUBT / AI CHAT (EDU SIR)
-// ==========================================
+// 3. ASK DOUBT / AI CHAT
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -406,7 +406,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         body: jsonEncode({
           'contents': [
             {
-              'parts': [{'text': "You are Edu Sir, an expert teacher. Solve this step by step: " + text}]
+              'parts': [{'text': "You are Edu Sir, an expert AI teacher. Provide crystal clear step by step solution: " + text}]
             }
           ]
         }),
@@ -463,7 +463,10 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                 onPressed: _isLoading ? null : _askAI,
                 icon: _isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.send, color: Colors.white),
                 label: Text(_isLoading ? "Edu Sir is Solving..." : "Solve My Doubt 🚀", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangle.circular(12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
             if (_response != null) ...[
@@ -482,9 +485,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// ==========================================
 // 4. CAREER GUIDANCE
-// ==========================================
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -511,9 +512,7 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// ==========================================
 // 5. PROFILE SCREEN
-// ==========================================
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
