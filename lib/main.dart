@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'user_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +15,27 @@ void main() async {
   runApp(const EduvaMasterApp());
 }
 
+// -------------------------------------------------------------
+// USER STATE (REQ 5 & 9: NAME, CLASS, EMAIL, PHONE, AIM)
+// -------------------------------------------------------------
+class UserState {
+  static String name = "Guest Student";
+  static String email = "student@eduva.com";
+  static String phone = "";
+  static String studentClass = "Class 11th";
+  static String targetGoal = "JEE 2026";
+  static int doubtsSolved = 0;
+  static int streakDays = 1;
+  static bool isLoggedIn = false;
+}
+
 class EduvaMasterApp extends StatelessWidget {
   const EduvaMasterApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'EDUVA',
+      title: 'EDUVA - AI Learning',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -30,6 +43,7 @@ class EduvaMasterApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2563EB),
           primary: const Color(0xFF2563EB),
+          surface: Colors.white,
         ),
       ),
       home: const MainDashboardShell(),
@@ -37,7 +51,9 @@ class EduvaMasterApp extends StatelessWidget {
   }
 }
 
-// MAIN BOTTOM NAVIGATION SHELL
+// -------------------------------------------------------------
+// MAIN DASHBOARD SHELL WITH 5 BOTTOM TABS
+// -------------------------------------------------------------
 class MainDashboardShell extends StatefulWidget {
   const MainDashboardShell({super.key});
 
@@ -114,7 +130,9 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
   }
 }
 
-// SCREEN 1: HOME (Starts by default + Login in AppBar)
+// -------------------------------------------------------------
+// SCREEN 1: HOME (REQ 1, 2, 3: OPENS FIRST, EDU SIR 3D, TOP LOGIN)
+// -------------------------------------------------------------
 class HomeScreen extends StatelessWidget {
   final VoidCallback onAskDoubtTab;
   const HomeScreen({super.key, required this.onAskDoubtTab});
@@ -213,7 +231,9 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// SCREEN 2: LOGIN WITH FORGOT PASS & SIGN UP
+// -------------------------------------------------------------
+// SCREEN 2: LOGIN SCREEN (REQ 4: FORGOT PASS & SIGN UP)
+// -------------------------------------------------------------
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -291,7 +311,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// SCREEN 3: SIGN UP (Name, Class, Email, Phone, Aim)
+// -------------------------------------------------------------
+// SCREEN 3: SIGN UP (REQ 5: NAME, CLASS, EMAIL, PHONE, AIM)
+// -------------------------------------------------------------
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -356,7 +378,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 }
 
-// SCREEN 4: FORGOT PASSWORD
+// -------------------------------------------------------------
+// SCREEN 4: FORGOT PASSWORD SCREEN
+// -------------------------------------------------------------
 class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -388,7 +412,9 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// SCREEN 5: ASK DOUBT WITH HARDWARE CAMERA, MIC, UPLOAD & WORKING AI
+// -------------------------------------------------------------
+// SCREEN 5: ASK DOUBT (REQ 6, 7, 8: CAMERA, UPLOAD, VOICE, LIVE AI)
+// -------------------------------------------------------------
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -467,7 +493,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     try {
       final apiKey = utf8.decode(base64.decode('QVEuQWI4Uk42SkVBMURYT3ZrTnQ4Vk9MMkpOcDYyQTFaRllmREZpYU5rOU1LRVJBWkxCNEE='));
       List<Map<String, dynamic>> parts = [];
-      parts.add({'text': "You are Edu Sir, an expert teacher. Subject: $_activeSubject. Give step-by-step clear explanation for: $query"});
+      parts.add({'text': "You are Edu Sir, an expert teacher. Subject: $_activeSubject. Give step-by-step clear explanation with formulas and final answer for: $query"});
 
       if (_imageFile != null) {
         final bytes = await _imageFile!.readAsBytes();
@@ -592,7 +618,9 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// SCREEN 6: AI CLASSROOM (Whiteboard / 3D)
+// -------------------------------------------------------------
+// SCREEN 6: AI CLASSROOM (WHITEBOARD & 3D LAB)
+// -------------------------------------------------------------
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -627,7 +655,9 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
+// -------------------------------------------------------------
 // SCREEN 7: CAREER GUIDANCE
+// -------------------------------------------------------------
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -648,7 +678,9 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// SCREEN 8: PROFILE SCREEN
+// -------------------------------------------------------------
+// SCREEN 8: PROFILE SCREEN (DYNAMIC DATA)
+// -------------------------------------------------------------
 class ProfileScreen extends StatelessWidget {
   final VoidCallback onRefresh;
   const ProfileScreen({super.key, required this.onRefresh});
