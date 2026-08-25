@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'user_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,24 +16,13 @@ void main() async {
   runApp(const EduvaMasterApp());
 }
 
-// User Profile & Session State
-class UserState {
-  static String name = "Kanha Jain";
-  static String email = "kanha@eduva.com";
-  static String studentClass = "Class 11th";
-  static String targetGoal = "JEE 2026";
-  static int doubtsSolved = 24;
-  static int streakDays = 7;
-  static bool isLoggedIn = false;
-}
-
 class EduvaMasterApp extends StatelessWidget {
   const EduvaMasterApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'EDUVA - AI Learning',
+      title: 'EDUVA',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -37,273 +30,16 @@ class EduvaMasterApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2563EB),
           primary: const Color(0xFF2563EB),
-          surface: Colors.white,
         ),
       ),
-      home: const AuthGate(),
+      home: const MainDashboardShell(),
     );
   }
 }
 
-class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
-
-  @override
-  State<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends State<AuthGate> {
-  @override
-  Widget build(BuildContext context) {
-    if (!UserState.isLoggedIn) {
-      return LoginScreen(
-        onLogin: () => setState(() => UserState.isLoggedIn = true),
-      );
-    }
-    return MainDashboardShell(
-      onLogout: () => setState(() => UserState.isLoggedIn = false),
-    );
-  }
-}
-
-// ==========================================
-// 1. LOGIN SCREEN (With Top Login & Forgot Pass)
-// ==========================================
-class LoginScreen extends StatefulWidget {
-  final VoidCallback onLogin;
-  const LoginScreen({super.key, required this.onLogin});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 30),
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20)),
-                      child: const Icon(Icons.school, size: 50, color: Color(0xFF2563EB)),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text("EDUVA", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: Color(0xFF1E3A8A))),
-                    const Text("Your Personal AI Teacher", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              const Text("Welcome Back! 👋", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-              const SizedBox(height: 6),
-              const Text("Login to access Edu Sir and your study dashboard", style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 24),
-              const Text("Email or Phone", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  hintText: "Enter email / phone",
-                  prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF2563EB)),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text("Password", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _passController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: "Enter password",
-                  prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF2563EB)),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
-                  },
-                  child: const Text("Forgot Your Password?", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_emailController.text.isNotEmpty) UserState.email = _emailController.text;
-                    widget.onLogin();
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: const Text("Log In", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => SignUpScreen(onSuccess: widget.onLogin)));
-                    },
-                    child: const Text("Sign Up", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ==========================================
-// SIGN UP SCREEN
-// ==========================================
-class SignUpScreen extends StatefulWidget {
-  final VoidCallback onSuccess;
-  const SignUpScreen({super.key, required this.onSuccess});
-
-  @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
-}
-
-class _SignUpScreenState extends State<SignUpScreen> {
-  final _nameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  String _classVal = "Class 11th";
-  String _goalVal = "JEE 2026";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Create Account ✨", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text("Register to start learning with Edu Sir AI", style: TextStyle(color: Colors.grey, fontSize: 13)),
-            const SizedBox(height: 24),
-            const Text("Full Name", style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            TextField(controller: _nameCtrl, decoration: InputDecoration(hintText: "Enter full name", filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
-            const SizedBox(height: 16),
-            const Text("Class / Grade", style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              value: _classVal,
-              decoration: InputDecoration(filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
-              items: ["Class 9th", "Class 10th", "Class 11th", "Class 12th", "Dropper"].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => setState(() => _classVal = v!),
-            ),
-            const SizedBox(height: 16),
-            const Text("Target Goal", style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              value: _goalVal,
-              decoration: InputDecoration(filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
-              items: ["JEE 2026", "NEET 2026", "Board Exams", "CUET"].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-              onChanged: (v) => setState(() => _goalVal = v!),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_nameCtrl.text.isNotEmpty) UserState.name = _nameCtrl.text;
-                  UserState.studentClass = _classVal;
-                  UserState.targetGoal = _goalVal;
-                  Navigator.pop(context);
-                  widget.onSuccess();
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: const Text("Sign Up & Start", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==========================================
-// FORGOT PASSWORD WINDOW
-// ==========================================
-class ForgotPasswordScreen extends StatelessWidget {
-  const ForgotPasswordScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = TextEditingController();
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text("Forgot Password"), backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Reset Password 🔒", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text("Enter your registered email address to receive password reset instructions.", style: TextStyle(color: Colors.grey, fontSize: 13)),
-            const SizedBox(height: 24),
-            TextField(controller: ctrl, decoration: InputDecoration(hintText: "Enter email address", filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Reset link sent successfully to your email!")));
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: const Text("Send Reset Link", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==========================================
-// MAIN APP SHELL & NAVIGATION
-// ==========================================
+// MAIN BOTTOM NAVIGATION SHELL
 class MainDashboardShell extends StatefulWidget {
-  final VoidCallback onLogout;
-  const MainDashboardShell({super.key, required this.onLogout});
+  const MainDashboardShell({super.key});
 
   @override
   State<MainDashboardShell> createState() => _MainDashboardShellState();
@@ -311,26 +47,26 @@ class MainDashboardShell extends StatefulWidget {
 
 class _MainDashboardShellState extends State<MainDashboardShell> {
   int _currentIndex = 0;
-  late final List<Widget> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
-      const HomeScreen(),
-      const AIClassroomScreen(),
-      const AskDoubtScreen(),
-      const CareerGuidanceScreen(),
-      ProfileScreen(onLogout: widget.onLogout),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomeScreen(onAskDoubtTab: () => setState(() => _currentIndex = 2)),
+      const AIClassroomScreen(),
+      const AskDoubtScreen(),
+      const CareerGuidanceScreen(),
+      ProfileScreen(onRefresh: () => setState(() {})),
+    ];
+
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: pages[_currentIndex],
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, -3))]),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, -3))
+          ],
+        ),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -343,7 +79,10 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
                   onTap: () => setState(() => _currentIndex = 2),
                   child: Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF4F46E5)]), shape: BoxShape.circle, boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.35), blurRadius: 8, offset: const Offset(0, 4))]),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF4F46E5)]),
+                      shape: BoxShape.circle,
+                    ),
                     child: const Icon(Icons.camera_alt, color: Colors.white, size: 26),
                   ),
                 ),
@@ -361,15 +100,13 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
     final isSelected = _currentIndex == index;
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
-      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(isSelected ? activeIcon : icon, color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600, size: 24),
-            const SizedBox(height: 3),
-            Text(label, style: TextStyle(color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600, fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+            Text(label, style: TextStyle(color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600, fontSize: 11)),
           ],
         ),
       ),
@@ -377,11 +114,10 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
   }
 }
 
-// ==========================================
-// SCREEN 1: HOME (About Us + Official 3D Edu Sir)
-// ==========================================
+// SCREEN 1: HOME (Starts by default + Login in AppBar)
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final VoidCallback onAskDoubtTab;
+  const HomeScreen({super.key, required this.onAskDoubtTab});
 
   @override
   Widget build(BuildContext context) {
@@ -391,10 +127,22 @@ class HomeScreen extends StatelessWidget {
           children: [
             Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: const Color(0xFF2563EB), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.token, color: Colors.white, size: 18)),
             const SizedBox(width: 8),
-            const Text("EDUVA", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Color(0xFF1E3A8A))),
+            const Text("EDUVA", style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A))),
           ],
         ),
-        actions: [IconButton(icon: const Icon(Icons.favorite_border, color: Colors.pinkAccent), onPressed: () {})],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+              },
+              icon: Icon(UserState.isLoggedIn ? Icons.person : Icons.login, size: 16),
+              label: Text(UserState.isLoggedIn ? UserState.name.split(' ')[0] : "Log In"),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+            ),
+          )
+        ],
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -404,21 +152,20 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: double.infinity,
               decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFDBEAFE))),
               child: Column(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.all(18),
+                  Padding(
+                    padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Welcome to", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
-                        Text("Eduva ✨", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
-                        SizedBox(height: 8),
-                        Text("Eduva is an AI-powered learning platform built to make quality education simple, interactive and accessible for every student.", style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
-                        SizedBox(height: 10),
-                        Text("That's why we created Edu Sir — your personal AI teacher.", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                        const Text("Welcome to", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+                        const Text("Eduva ✨", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                        const SizedBox(height: 8),
+                        const Text("Eduva is an AI-powered learning platform built to make quality education simple, interactive and accessible for every student.", style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
+                        const SizedBox(height: 10),
+                        const Text("That's why we created Edu Sir — your personal AI teacher.", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
                       ],
                     ),
                   ),
@@ -429,107 +176,177 @@ class HomeScreen extends StatelessWidget {
                       height: 190,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(height: 150, color: const Color(0xFFDBEAFE), child: const Center(child: Icon(Icons.school, size: 60, color: Color(0xFF2563EB))));
-                      },
+                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.school, size: 60, color: Color(0xFF2563EB))),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _cardInfo(Icons.track_changes, "Our Mission", "To make high-quality education accessible through AI.", const Color(0xFF10B981), const Color(0xFFECFDF5))),
-                const SizedBox(width: 12),
-                Expanded(child: _cardInfo(Icons.visibility, "Our Vision", "To become the world's most trusted AI learning platform.", const Color(0xFF8B5CF6), const Color(0xFFF5F3FF))),
-              ],
+            GestureDetector(
+              onTap: onAskDoubtTab,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF4F46E5)]), borderRadius: BorderRadius.circular(16)),
+                child: const Row(
+                  children: [
+                    Icon(Icons.camera_alt, color: Colors.white, size: 30),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Instant Camera & Voice Doubt Solver", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text("Snap, write or speak your question for instant solution", style: TextStyle(color: Colors.white70, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16)
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _cardInfo(IconData icon, String title, String desc, Color color, Color bg) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
-          const SizedBox(height: 4),
-          Text(desc, style: TextStyle(fontSize: 11, color: Colors.grey.shade700, height: 1.3)),
-        ],
+// SCREEN 2: LOGIN WITH FORGOT PASS & SIGN UP
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Column(
+                  children: [
+                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.school, size: 50, color: Color(0xFF2563EB))),
+                    const SizedBox(height: 10),
+                    const Text("EDUVA", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+              const Text("Welcome Back! 👋", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              TextField(controller: _emailController, decoration: InputDecoration(hintText: "Email or Phone", prefixIcon: const Icon(Icons.email_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+              const SizedBox(height: 14),
+              TextField(controller: _passController, obscureText: true, decoration: InputDecoration(hintText: "Password", prefixIcon: const Icon(Icons.lock_outline), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                  child: const Text("Forgot Your Password?", style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    UserState.isLoggedIn = true;
+                    if (_emailController.text.isNotEmpty) UserState.email = _emailController.text;
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                  child: const Text("Log In", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
+                    child: const Text("Sign Up", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                  )
+                ],
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-// ==========================================
-// SCREEN 2: AI CLASSROOM (Whiteboard & 3D Lab)
-// ==========================================
-class AIClassroomScreen extends StatefulWidget {
-  const AIClassroomScreen({super.key});
+// SCREEN 3: SIGN UP (Name, Class, Email, Phone, Aim)
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<AIClassroomScreen> createState() => _AIClassroomScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _AIClassroomScreenState extends State<AIClassroomScreen> {
-  bool is3DMode = false;
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _aimCtrl = TextEditingController();
+  String _classVal = "Class 11th";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("AI Classroom & 3D Lab"), backgroundColor: Colors.white, elevation: 0),
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("Create Student Account"), backgroundColor: Colors.white),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => setState(() => is3DMode = false),
-                    icon: const Icon(Icons.draw, size: 16),
-                    label: const Text("Whiteboard Mode"),
-                    style: ElevatedButton.styleFrom(backgroundColor: !is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: !is3DMode ? Colors.white : Colors.black87, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => setState(() => is3DMode = true),
-                    icon: const Icon(Icons.view_in_ar, size: 16),
-                    label: const Text("3D Interactive View"),
-                    style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: is3DMode ? Colors.white : Colors.black87, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  ),
-                ),
-              ],
+            TextField(controller: _nameCtrl, decoration: InputDecoration(hintText: "Full Name", prefixIcon: const Icon(Icons.person_outline), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _classVal,
+              decoration: InputDecoration(prefixIcon: const Icon(Icons.school_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
+              items: ["Class 9th", "Class 10th", "Class 11th", "Class 12th", "Dropper"].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+              onChanged: (v) => setState(() => _classVal = v!),
             ),
-            const SizedBox(height: 16),
-            Container(
+            const SizedBox(height: 12),
+            TextField(controller: _emailCtrl, decoration: InputDecoration(hintText: "Email ID", prefixIcon: const Icon(Icons.email_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+            const SizedBox(height: 12),
+            TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(hintText: "Phone Number", prefixIcon: const Icon(Icons.phone_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+            const SizedBox(height: 12),
+            TextField(controller: _aimCtrl, decoration: InputDecoration(hintText: "Target Goal / Aim (e.g. JEE, NEET, Board 95%)", prefixIcon: const Icon(Icons.flag_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+            const SizedBox(height: 20),
+            SizedBox(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Human Heart Anatomy", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                  const SizedBox(height: 6),
-                  const Text("• 4 Chambers: Right/Left Atrium & Ventricles\n• Double circulation of blood", style: TextStyle(fontSize: 13, height: 1.4)),
-                  const SizedBox(height: 14),
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
-                    child: Center(child: Icon(is3DMode ? Icons.view_in_ar : Icons.favorite, size: 76, color: Colors.red.shade400)),
-                  )
-                ],
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_nameCtrl.text.isNotEmpty) UserState.name = _nameCtrl.text;
+                  if (_emailCtrl.text.isNotEmpty) UserState.email = _emailCtrl.text;
+                  if (_phoneCtrl.text.isNotEmpty) UserState.phone = _phoneCtrl.text;
+                  if (_aimCtrl.text.isNotEmpty) UserState.targetGoal = _aimCtrl.text;
+                  UserState.studentClass = _classVal;
+                  UserState.isLoggedIn = true;
+
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Account created successfully!")));
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                child: const Text("Create Account & Start", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             )
           ],
@@ -539,9 +356,39 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
-// ==========================================
-// SCREEN 3: ASK A DOUBT (Camera, Upload, Voice, Type & AI Solver)
-// ==========================================
+// SCREEN 4: FORGOT PASSWORD
+class ForgotPasswordScreen extends StatelessWidget {
+  const ForgotPasswordScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("Forgot Password"), backgroundColor: Colors.white),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Text("Enter your registered email ID to receive a password reset link:"),
+            const SizedBox(height: 16),
+            TextField(decoration: InputDecoration(hintText: "Email ID", filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Reset link sent to your email!")));
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+              child: const Text("Send Reset Link", style: TextStyle(color: Colors.white)),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// SCREEN 5: ASK DOUBT WITH HARDWARE CAMERA, MIC, UPLOAD & WORKING AI
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -551,14 +398,64 @@ class AskDoubtScreen extends StatefulWidget {
 
 class _AskDoubtScreenState extends State<AskDoubtScreen> {
   final TextEditingController _controller = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+
+  File? _imageFile;
+  bool _isListening = false;
   bool _isLoading = false;
   String? _response;
   String _activeSubject = "Mathematics";
 
-  Future<void> _askEduSirAI() async {
+  Future<void> _openCamera() async {
+    try {
+      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      if (photo != null) {
+        setState(() {
+          _imageFile = File(photo.path);
+          _controller.text = "Please solve the question in the attached image step by step.";
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Camera error: $e")));
+    }
+  }
+
+  Future<void> _openGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _imageFile = File(image.path);
+          _controller.text = "Please explain the concept and solution for this uploaded problem.";
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload error: $e")));
+    }
+  }
+
+  Future<void> _listenVoice() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(onResult: (val) {
+          setState(() {
+            _controller.text = val.recognizedWords;
+          });
+        });
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
+  Future<void> _solveWithAI() async {
     final query = _controller.text.trim();
-    if (query.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please write, snap or speak your question first!")));
+    if (query.isEmpty && _imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please write, snap or record your question!")));
       return;
     }
 
@@ -569,16 +466,23 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
     try {
       final apiKey = utf8.decode(base64.decode('QVEuQWI4Uk42SkVBMURYT3ZrTnQ4Vk9MMkpOcDYyQTFaRllmREZpYU5rOU1LRVJBWkxCNEE='));
-      final prompt = "You are 'Edu Sir', a friendly and expert AI teacher for Indian students. "
-          "Subject: $_activeSubject. Question: '$query'. "
-          "Provide a crystal clear, step-by-step easy explanation with formulas and final answer.";
+      List<Map<String, dynamic>> parts = [];
+      parts.add({'text': "You are Edu Sir, an expert teacher. Subject: $_activeSubject. Give step-by-step clear explanation for: $query"});
+
+      if (_imageFile != null) {
+        final bytes = await _imageFile!.readAsBytes();
+        parts.add({
+          'inlineData': {
+            'mimeType': 'image/jpeg',
+            'data': base64Encode(bytes)
+          }
+        });
+      }
 
       final res = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey'),
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [{'parts': [{'text': prompt}]}]
-        }),
+        body: jsonEncode({'contents': [{'parts': parts}]}),
       );
 
       if (res.statusCode == 200) {
@@ -588,10 +492,10 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
           UserState.doubtsSolved += 1;
         });
       } else {
-        setState(() => _response = "Edu Sir is currently analyzing. Please tap Solve again.");
+        setState(() => _response = "Edu Sir is analyzing. Please tap Solve again.");
       }
-    } catch (_) {
-      setState(() => _response = "Network connection error. Please check your internet.");
+    } catch (e) {
+      setState(() => _response = "Connection error: $e");
     } finally {
       setState(() => _isLoading = false);
     }
@@ -600,26 +504,22 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Ask Edu Sir (Doubt Solver)"), backgroundColor: Colors.white, elevation: 0),
+      appBar: AppBar(title: const Text("Ask Edu Sir (Doubt Solver)"), backgroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Select Subject:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: ["Mathematics", "Physics", "Chemistry", "Biology"].map((sub) {
-                  final isSel = _activeSubject == sub;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
                       label: Text(sub),
-                      selected: isSel,
+                      selected: _activeSubject == sub,
                       selectedColor: const Color(0xFF2563EB),
-                      labelStyle: TextStyle(color: isSel ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                      labelStyle: TextStyle(color: _activeSubject == sub ? Colors.white : Colors.black),
                       onSelected: (val) => setState(() => _activeSubject = sub),
                     ),
                   );
@@ -635,35 +535,30 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                   TextField(
                     controller: _controller,
                     maxLines: 4,
-                    decoration: const InputDecoration(hintText: "✍️ Write / Type your doubt here...", border: InputBorder.none),
+                    decoration: const InputDecoration(hintText: "✍️ Type question, take photo or record voice...", border: InputBorder.none),
                   ),
+                  if (_imageFile != null) ...[
+                    const Divider(),
+                    Row(
+                      children: [
+                        const Icon(Icons.image, color: Color(0xFF2563EB)),
+                        const SizedBox(width: 8),
+                        const Text("Image Attached", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                        const Spacer(),
+                        IconButton(icon: const Icon(Icons.close, color: Colors.red), onPressed: () => setState(() => _imageFile = null))
+                      ],
+                    ),
+                  ],
                   const Divider(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
+                      TextButton.icon(icon: const Icon(Icons.camera_alt), label: const Text("Camera"), onPressed: _openCamera),
+                      TextButton.icon(icon: const Icon(Icons.photo_library), label: const Text("Upload"), onPressed: _openGallery),
                       TextButton.icon(
-                        icon: const Icon(Icons.camera_alt, color: Color(0xFF2563EB)),
-                        label: const Text("Camera", style: TextStyle(color: Color(0xFF2563EB))),
-                        onPressed: () {
-                          setState(() => _controller.text = "In right triangle ABC, AC = 25m, BC = 7m. Find height AB.");
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("📸 Camera scanned question successfully!")));
-                        },
-                      ),
-                      TextButton.icon(
-                        icon: const Icon(Icons.photo_library, color: Color(0xFF2563EB)),
-                        label: const Text("Upload", style: TextStyle(color: Color(0xFF2563EB))),
-                        onPressed: () {
-                          setState(() => _controller.text = "A 5kg block rests on rough surface with μ=0.2. Find acceleration for 20N force.");
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("📁 Image uploaded from gallery!")));
-                        },
-                      ),
-                      TextButton.icon(
-                        icon: const Icon(Icons.mic, color: Color(0xFF2563EB)),
-                        label: const Text("Voice", style: TextStyle(color: Color(0xFF2563EB))),
-                        onPressed: () {
-                          setState(() => _controller.text = "Explain Photosynthesis light and dark reactions step by step.");
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🎙️ Voice recorded and transcribed!")));
-                        },
+                        icon: Icon(_isListening ? Icons.mic_off : Icons.mic, color: _isListening ? Colors.red : const Color(0xFF2563EB)),
+                        label: Text(_isListening ? "Listening..." : "Voice"),
+                        onPressed: _listenVoice,
                       ),
                     ],
                   )
@@ -675,10 +570,10 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : _askEduSirAI,
-                icon: _isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.auto_awesome, color: Colors.white),
+                onPressed: _isLoading ? null : _solveWithAI,
+                icon: _isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white)) : const Icon(Icons.auto_awesome, color: Colors.white),
                 label: Text(_isLoading ? "Edu Sir is Solving..." : "Solve My Doubt Now 🚀", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
               ),
             ),
             if (_response != null) ...[
@@ -687,21 +582,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF93C5FD))),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.school, color: Color(0xFF2563EB), size: 18),
-                        SizedBox(width: 8),
-                        Text("Edu Sir's Step-by-Step Solution:", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 4),
-                    SelectableText(_response!, style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF1F2937))),
-                  ],
-                ),
+                child: SelectableText(_response!, style: const TextStyle(fontSize: 14, height: 1.5)),
               )
             ]
           ],
@@ -711,28 +592,34 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// ==========================================
-// SCREEN 4: PROGRESS & GOALS
-// ==========================================
-class CareerGuidanceScreen extends StatelessWidget {
-  const CareerGuidanceScreen({super.key});
+// SCREEN 6: AI CLASSROOM (Whiteboard / 3D)
+class AIClassroomScreen extends StatefulWidget {
+  const AIClassroomScreen({super.key});
+
+  @override
+  State<AIClassroomScreen> createState() => _AIClassroomScreenState();
+}
+
+class _AIClassroomScreenState extends State<AIClassroomScreen> {
+  bool is3DMode = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Career Guidance"), backgroundColor: Colors.white, elevation: 0),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text("AI Classroom & 3D Lab"), backgroundColor: Colors.white),
+      body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]), borderRadius: BorderRadius.circular(16)),
-              child: const Text("AI Career Roadmaps & Test for Students", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            Row(
+              children: [
+                Expanded(child: ElevatedButton(onPressed: () => setState(() => is3DMode = false), child: const Text("Whiteboard"))),
+                const SizedBox(width: 8),
+                Expanded(child: ElevatedButton(onPressed: () => setState(() => is3DMode = true), child: const Text("3D View"))),
+              ],
             ),
-            const SizedBox(height: 16),
-            const ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills • ₹12 LPA")),
-            const ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills • ₹10 LPA")),
+            const SizedBox(height: 20),
+            Container(height: 220, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(16)), child: Center(child: Icon(is3DMode ? Icons.view_in_ar : Icons.favorite, size: 80, color: Colors.redAccent))),
           ],
         ),
       ),
@@ -740,18 +627,37 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// ==========================================
-// SCREEN 5: STUDENT PROFILE
-// ==========================================
-class ProfileScreen extends StatelessWidget {
-  final VoidCallback onLogout;
-  const ProfileScreen({super.key, required this.onLogout});
+// SCREEN 7: CAREER GUIDANCE
+class CareerGuidanceScreen extends StatelessWidget {
+  const CareerGuidanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Student Profile"), backgroundColor: Colors.white, elevation: 0),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text("Career Guidance"), backgroundColor: Colors.white),
+      body: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills • ₹12 LPA")),
+            ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills • ₹10 LPA")),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// SCREEN 8: PROFILE SCREEN
+class ProfileScreen extends StatelessWidget {
+  final VoidCallback onRefresh;
+  const ProfileScreen({super.key, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white),
+      body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -764,10 +670,7 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 children: [
                   ListTile(leading: const Icon(Icons.bolt, color: Colors.orange), title: Text("Streak: ${UserState.streakDays} Days active")),
-                  const Divider(height: 1),
                   ListTile(leading: const Icon(Icons.check_circle, color: Colors.green), title: Text("Doubts Solved: ${UserState.doubtsSolved}")),
-                  const Divider(height: 1),
-                  ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text("Log Out", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)), onTap: onLogout),
                 ],
               ),
             ),
