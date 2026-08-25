@@ -10,5 +10,5 @@ image_picker_ios=/root/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/
 image_picker_linux=/root/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2/
 image_picker_macos=/root/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2/
 image_picker_windows=/root/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/
-speech_to_text=/root/.pub-cache/hosted/pub.dev/speech_to_text-7.4.0/
-speech_to_text_windows=/root/.pub-cache/hosted/pub.dev/speech_to_text_windows-1.0.1/
+speech_to_text=/root/.pub-cache/hosted/pub.dev/speech_to_text-6.6.2/
+speech_to_text_macos=/root/.pub-cache/hosted/pub.dev/speech_to_text_macos-1.1.0/
