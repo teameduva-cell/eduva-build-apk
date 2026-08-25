@@ -9,16 +9,26 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(const EduvaMasterApp());
+  runApp(const EduvaApp());
 }
 
-class EduvaMasterApp extends StatelessWidget {
-  const EduvaMasterApp({super.key});
+class UserState {
+  static String name = "Kanha Jain";
+  static String email = "student@eduva.com";
+  static String studentClass = "Class 11th";
+  static String targetGoal = "JEE 2026";
+  static int doubtsSolved = 18;
+  static int streakDays = 7;
+  static bool isLoggedIn = true;
+}
+
+class EduvaApp extends StatelessWidget {
+  const EduvaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'EDUVA',
+      title: 'EDUVA - AI Learning',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -26,28 +36,30 @@ class EduvaMasterApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2563EB),
           primary: const Color(0xFF2563EB),
+          surface: Colors.white,
         ),
       ),
-      home: const MainShell(),
+      home: const MainDashboardShell(),
     );
   }
 }
 
-class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+class MainDashboardShell extends StatefulWidget {
+  const MainDashboardShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<MainDashboardShell> createState() => _MainDashboardShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainDashboardShellState extends State<MainDashboardShell> {
   int _currentIndex = 0;
-  final List<Widget> _pages = const [
-    AboutUsScreen(),
-    AIClassroomScreen(),
-    AIChatScreen(),
-    CareerGuidanceScreen(),
-    ProfileScreen(),
+
+  final List<Widget> _pages = [
+    const HomeScreen(),
+    const AIClassroomScreen(),
+    const AskDoubtScreen(),
+    const CareerGuidanceScreen(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -67,29 +79,24 @@ class _MainShellState extends State<MainShell> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _navItem(Icons.home_outlined, Icons.home, "Home", 0),
-                _navItem(Icons.ondemand_video_outlined, Icons.ondemand_video, "AI Classroom", 1),
+                _navButton(Icons.home_outlined, Icons.home, "Home", 0),
+                _navButton(Icons.ondemand_video_outlined, Icons.ondemand_video, "AI Classroom", 1),
                 GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Instant Camera Doubt Solver Ready! Point at any book question.")),
-                    );
-                    setState(() => _currentIndex = 2);
-                  },
+                  onTap: () => setState(() => _currentIndex = 2),
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
+                        colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF3B82F6).withOpacity(0.4),
+                          color: const Color(0xFF2563EB).withOpacity(0.35),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         )
@@ -98,8 +105,8 @@ class _MainShellState extends State<MainShell> {
                     child: const Icon(Icons.camera_alt, color: Colors.white, size: 26),
                   ),
                 ),
-                _navItem(Icons.trending_up, Icons.trending_up, "Progress", 3),
-                _navItem(Icons.person_outline, Icons.person, "Profile", 4),
+                _navButton(Icons.auto_graph_outlined, Icons.auto_graph, "Progress", 3),
+                _navButton(Icons.person_outline, Icons.person, "Profile", 4),
               ],
             ),
           ),
@@ -108,15 +115,15 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _navItem(IconData icon, IconData activeIcon, String label, int index) {
+  Widget _navButton(IconData icon, IconData activeIcon, String label, int index) {
     final isSelected = _currentIndex == index;
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4),
         child: Column(
-          mainAxisSize: dynamic_size(isSelected),
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? activeIcon : icon,
@@ -137,13 +144,13 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
-
-  MainAxisSize dynamic_size(bool _) => MainAxisSize.min;
 }
 
-// 1. ABOUT US SCREEN
-class AboutUsScreen extends StatelessWidget {
-  const AboutUsScreen({super.key});
+// ==========================================
+// 1. HOME / ABOUT US (With Official 3D Edu Sir)
+// ==========================================
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -174,45 +181,59 @@ class AboutUsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Welcome Header Card With Edu Sir Character
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: const Color(0xFFDBEAFE)),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
+                  Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Welcome to", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
-                        const Text("Eduva ✨", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Eduva is an AI-powered learning platform built to make quality education simple, interactive and accessible for every student.",
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.4),
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Welcome to", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+                              const Text("Eduva ✨", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Eduva is an AI-powered learning platform built to make quality education simple, interactive and accessible for every student.",
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.4),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "That's why we created Edu Sir — your personal AI teacher.",
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                              )
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "That's why we created Edu Sir — your personal AI teacher.",
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                        )
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFDBEAFE),
-                      ),
-                      child: const Icon(Icons.face_retouching_natural, size: 70, color: Color(0xFF1D4ED8)),
+                  // Render 3D Board Character Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+                    child: Image.asset(
+                      'assets/images/edu_sir_board.png',
+                      height: 190,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 160,
+                          color: const Color(0xFFDBEAFE),
+                          child: const Center(child: Icon(Icons.school, size: 64, color: Color(0xFF2563EB))),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -241,28 +262,6 @@ class AboutUsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
-              child: const Row(
-                children: [
-                  Icon(Icons.verified_user, color: Color(0xFF2563EB), size: 36),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Our Promise", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text("We don't just give answers. We help students understand, learn, practice and grow.", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(child: Text("Learn Better. Grow Faster.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue.shade800)))
           ],
         ),
       ),
@@ -303,7 +302,9 @@ class AboutUsScreen extends StatelessWidget {
   }
 }
 
+// ==========================================
 // 2. AI CLASSROOM
+// ==========================================
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -317,62 +318,55 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("AI Classroom", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text("AI Classroom & 3D Lab"), backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           children: [
             Row(
               children: [
-                ElevatedButton.icon(
-                  onPressed: () => setState(() => is3DMode = false),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text("Board Mode"),
-                  style: ElevatedButton.styleFrom(backgroundColor: !is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: !is3DMode ? Colors.white : Colors.black87),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => setState(() => is3DMode = false),
+                    icon: const Icon(Icons.draw, size: 16),
+                    label: const Text("Board Mode"),
+                    style: ElevatedButton.styleFrom(backgroundColor: !is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: !is3DMode ? Colors.white : Colors.black87),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () => setState(() => is3DMode = true),
-                  icon: const Icon(Icons.view_in_ar, size: 16),
-                  label: const Text("3D Mode"),
-                  style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: is3DMode ? Colors.white : Colors.black87),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => setState(() => is3DMode = true),
+                    icon: const Icon(Icons.view_in_ar, size: 16),
+                    label: const Text("3D Mode"),
+                    style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? const Color(0xFF2563EB) : Colors.grey.shade200, foregroundColor: is3DMode ? Colors.white : Colors.black87),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0), width: 2)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Human Heart", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                  const SizedBox(height: 8),
-                  const Text("• The heart is a muscular organ.\n• Pumps blood to all parts of the body.\n• Has 4 chambers (Right/Left Atrium & Ventricles).", style: TextStyle(fontSize: 13, height: 1.5)),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(is3DMode ? Icons.view_in_ar : Icons.favorite, size: 72, color: Colors.red.shade400),
-                          const SizedBox(height: 8),
-                          Text(is3DMode ? "Interactive 3D Heart Simulation" : "Anatomical Diagram of Heart", style: const TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
+                  const Text("Human Heart Anatomy", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                  const SizedBox(height: 6),
+                  const Text("• Muscular organ with 4 distinct chambers\n• Interventricular septum separates oxygenated & deoxygenated blood", style: TextStyle(fontSize: 13, height: 1.4)),
+                  const SizedBox(height: 14),
+                  Container(
+                    height: 190,
+                    width: double.infinity,
+                    decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
+                    child: Center(
+                      child: Icon(is3DMode ? Icons.view_in_ar : Icons.favorite, size: 70, color: Colors.red.shade400),
                     ),
-                  ),
+                  )
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),
@@ -380,105 +374,132 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
-// 3. AI CHAT
-class AIChatScreen extends StatefulWidget {
-  const AIChatScreen({super.key});
+// ==========================================
+// 3. ASK DOUBT / AI CHAT (EDU SIR)
+// ==========================================
+class AskDoubtScreen extends StatefulWidget {
+  const AskDoubtScreen({super.key});
 
   @override
-  State<AIChatScreen> createState() => _AIChatScreenState();
+  State<AskDoubtScreen> createState() => _AskDoubtScreenState();
 }
 
-class _AIChatScreenState extends State<AIChatScreen> {
-  final List<Map<String, String>> _messages = [
-    {'role': 'user', 'text': 'Sir, please solve this right triangle question step by step:\nAC = 25m, BC = 7m, find h (AB).'},
-    {'role': 'ai', 'text': 'Sure, Champion! 😊\nBy Pythagoras Theorem:\nAC² = AB² + BC²\n(25)² = h² + (7)²\n625 = h² + 49\nh² = 576\nh = 24 m\nHeight (AB) is 24 m. ✅'}
-  ];
-  final _controller = TextEditingController();
-  static final String _apiKey = utf8.decode(base64.decode('QVEuQWI4Uk42SkVBMURYT3ZrTnQ4Vk9MMkpOcDYyQTFaRllmREZpYU5rOU1LRVJBWkxCNEE='));
+class _AskDoubtScreenState extends State<AskDoubtScreen> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isLoading = false;
+  String? _response;
 
-  void _send() async {
+  Future<void> _askAI() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    setState(() => _messages.add({'role': 'user', 'text': text}));
-    _controller.clear();
+    setState(() {
+      _isLoading = true;
+      _response = null;
+    });
 
     try {
+      final apiKey = utf8.decode(base64.decode('QVEuQWI4Uk42SkVBMURYT3ZrTnQ4Vk9MMkpOcDYyQTFaRllmREZpYU5rOU1LRVJBWkxCNEE='));
       final res = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey'),
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'contents': [{'parts': [{'text': text}]}]}),
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [{'text': "You are Edu Sir, an expert teacher. Solve this step by step: " + text}]
+            }
+          ]
+        }),
       );
 
       if (res.statusCode == 200) {
         final d = jsonDecode(res.body);
-        final ans = d['candidates'][0]['content']['parts'][0]['text'];
-        setState(() => _messages.add({'role': 'ai', 'text': ans}));
+        setState(() => _response = d['candidates'][0]['content']['parts'][0]['text']);
+      } else {
+        setState(() => _response = "Edu Sir is busy. Please ask again.");
       }
-    } catch (_) {}
+    } catch (_) {
+      setState(() => _response = "Network error. Please check your internet connection.");
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("AI Chat (Edu Sir)"), backgroundColor: Colors.white),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, i) {
-                final isUser = _messages[i]['role'] == 'user';
-                return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(12),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-                    decoration: BoxDecoration(color: isUser ? const Color(0xFF2563EB) : Colors.white, borderRadius: BorderRadius.circular(14)),
-                    child: Text(_messages[i]['text']!, style: TextStyle(color: isUser ? Colors.white : Colors.black87)),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
+      appBar: AppBar(title: const Text("Ask Edu Sir (Live AI)"), backgroundColor: Colors.white, elevation: 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade300)),
+              child: Column(
+                children: [
+                  TextField(
                     controller: _controller,
-                    decoration: InputDecoration(hintText: "Ask anything...", filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none)),
+                    maxLines: 4,
+                    decoration: const InputDecoration(hintText: "✍️ Write / Type your question here...", border: InputBorder.none),
                   ),
-                ),
-                IconButton(icon: const Icon(Icons.send, color: Color(0xFF2563EB)), onPressed: _send),
-              ],
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      IconButton(icon: const Icon(Icons.camera_alt, color: Color(0xFF2563EB)), onPressed: () => _controller.text = "In a right triangle ABC, AC = 25m, BC = 7m. Find AB."),
+                      IconButton(icon: const Icon(Icons.photo, color: Color(0xFF2563EB)), onPressed: () => _controller.text = "State Ohm's law and write its mathematical formula."),
+                      IconButton(icon: const Icon(Icons.mic, color: Color(0xFF2563EB)), onPressed: () => _controller.text = "Explain Photosynthesis light and dark reactions."),
+                    ],
+                  )
+                ],
+              ),
             ),
-          )
-        ],
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _isLoading ? null : _askAI,
+                icon: _isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.send, color: Colors.white),
+                label: Text(_isLoading ? "Edu Sir is Solving..." : "Solve My Doubt 🚀", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangle.circular(12)),
+              ),
+            ),
+            if (_response != null) ...[
+              const SizedBox(height: 18),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF93C5FD))),
+                child: SelectableText(_response!, style: const TextStyle(fontSize: 14, height: 1.5)),
+              )
+            ]
+          ],
+        ),
       ),
     );
   }
 }
 
+// ==========================================
 // 4. CAREER GUIDANCE
+// ==========================================
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Career Guidance"), backgroundColor: Colors.white),
+      appBar: AppBar(title: const Text("Career Guidance"), backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]), borderRadius: BorderRadius.circular(16)),
-              child: const Text("AI Career Test & Roadmaps for Students", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: const Text("AI Career Test & Roadmaps for Classes 9-12", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(height: 16),
             const ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills • ₹12 LPA")),
@@ -490,22 +511,24 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
+// ==========================================
 // 5. PROFILE SCREEN
+// ==========================================
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white),
+      appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const CircleAvatar(radius: 36, backgroundColor: Color(0xFF2563EB), child: Icon(Icons.person, size: 42, color: Colors.white)),
+            const CircleAvatar(radius: 38, backgroundColor: Color(0xFF2563EB), child: Icon(Icons.person, size: 44, color: Colors.white)),
             const SizedBox(height: 10),
-            const Text("Ankit (Kanha Jain)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Text("Class 11th • JEE 2026", style: TextStyle(color: Colors.grey)),
+            Text(UserState.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("${UserState.studentClass} • Goal: ${UserState.targetGoal}", style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 20),
             Card(
               child: ListTile(
