@@ -397,7 +397,7 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// 5. ASK DOUBT SCREEN (100% WORKING GEMINI AI ENDPOINT WITH DIRECT RESPONSE)
+// 5. ASK DOUBT SCREEN (AUTHENTIC GEMINI 1.5 FLASH SOLVER)
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -415,6 +415,9 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   bool _isLoading = false;
   String? _response;
   String _activeSubject = "Mathematics";
+
+  // Google AI Gemini Key
+  final String _apiKey = "AQ.Ab8RN6IwskpBAadup6ebGCcOnotF2mqDj59RRgeHhZlOlVRqUg";
 
   Future<void> _openCamera() async {
     try {
@@ -461,7 +464,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     }
   }
 
-  // DIRECT RELIABLE GEMINI AI SOLVER
   Future<void> _solveWithAI() async {
     final query = _controller.text.trim();
     if (query.isEmpty && _imageFile == null) {
@@ -475,8 +477,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     });
 
     try {
-      final apiKey = utf8.decode(base64.decode('QVEuQWI4Uk42SkVBMURYT3ZrTnQ4Vk9MMkpOcDYyQTFaRllmREZpYU5rOU1LRVJBWkxCNEE='));
-      
       List<Map<String, dynamic>> parts = [];
       parts.add({
         'text': "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Question: $query. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer."
@@ -492,52 +492,34 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         });
       }
 
-      // 1. Try Gemini 1.5 Flash Endpoint
+      final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey');
       final res = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey'),
+        url,
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
         },
-        body: jsonEncode({'contents': [{'parts': parts}]}),
-      ).timeout(const Duration(seconds: 25));
+        body: jsonEncode({
+          'contents': [
+            {'parts': parts}
+          ]
+        }),
+      ).timeout(const Duration(seconds: 35));
 
       if (res.statusCode == 200) {
-        final d = jsonDecode(res.body);
-        if (d['candidates'] != null && d['candidates'].isNotEmpty) {
-          final content = d['candidates'][0]['content']['parts'][0]['text'];
-          setState(() {
-            _response = content;
-            UserState.doubtsSolved += 1;
-          });
-          return;
-        }
-      }
-
-      // 2. Fallback to Gemini 2.5 Flash if needed
-      final res2 = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey'),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: jsonEncode({'contents': [{'parts': parts}]}),
-      );
-
-      if (res2.statusCode == 200) {
-        final d2 = jsonDecode(res2.body);
-        final content2 = d2['candidates'][0]['content']['parts'][0]['text'];
+        final data = jsonDecode(res.body);
+        final content = data['candidates'][0]['content']['parts'][0]['text'];
         setState(() {
-          _response = content2;
+          _response = content;
           UserState.doubtsSolved += 1;
         });
       } else {
-        setState(() => _response = "Edu Sir Solution:\n\n• Step 1: Understand the given variables and identify the core formula.\n• Step 2: Apply direct substitution to solve the problem.\n\nAnswer: Completed successfully. Please ask follow-up if needed!");
+        setState(() {
+          _response = "Edu Sir Server Issue (${res.statusCode}):\n${res.body}";
+        });
       }
     } catch (e) {
-      // Fallback offline solving guarantee so user NEVER gets blank screen
       setState(() {
-        _response = "Edu Sir's Step-by-Step Explanation:\n\n1. Formula: Given question analyzed under $_activeSubject.\n2. Solution: Computed based on fundamental laws.\n3. Final Answer: Verified accurately! ✅";
+        _response = "Connection Error: $e\nPlease check your internet connection.";
       });
     } finally {
       setState(() => _isLoading = false);
