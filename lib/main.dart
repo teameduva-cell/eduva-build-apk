@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+    import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -38,14 +38,18 @@ class EduvaMasterApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB),
-          primary: const Color(0xFF2563EB),
+          seedColor: const Color(0xFF4F46E5),
+          primary: const Color(0xFF4F46E5),
         ),
       ),
       home: const MainDashboardShell(),
     );
   }
 }
+
+// Shared gradient used across the app (matches the Edu Sir brand look)
+const kEduvaGradient = LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)]);
+const kEduvaPrimary = Color(0xFF4F46E5);
 
 class MainDashboardShell extends StatefulWidget {
   const MainDashboardShell({super.key});
@@ -56,19 +60,30 @@ class MainDashboardShell extends StatefulWidget {
 
 class _MainDashboardShellState extends State<MainDashboardShell> {
   int _currentIndex = 0;
+  bool _autoOpenCamera = false;
+
+  void _goToChat({bool openCamera = false}) {
+    setState(() {
+      _autoOpenCamera = openCamera;
+      _currentIndex = 1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(onAskDoubtTab: () => setState(() => _currentIndex = 2)),
+      HomeScreen(onAskDoubtTab: () => _goToChat()),
+      AskDoubtScreen(autoOpenCamera: _autoOpenCamera, onCameraConsumed: () => setState(() => _autoOpenCamera = false)),
       const AIClassroomScreen(),
-      const AskDoubtScreen(),
-      const CareerGuidanceScreen(),
       ProfileScreen(onRefresh: () => setState(() {})),
     ];
 
+    // Index mapping for the 5 nav slots -> the 4 actual pages
+    // 0 Home, 1 AI Chat, [2 Scan -> opens AI Chat w/ camera], 3 AI Classroom(shown as index2), 4 Profile(shown as index3)
+    final pageForNav = {0: 0, 1: 1, 3: 2, 4: 3};
+
     return Scaffold(
-      body: pages[_currentIndex],
+      body: pages[pageForNav[_currentIndex] ?? 0],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -78,24 +93,31 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _navButton(Icons.home_outlined, Icons.home, "Home", 0),
-                _navButton(Icons.ondemand_video_outlined, Icons.ondemand_video, "AI Classroom", 1),
+                _navButton(Icons.chat_bubble_outline, Icons.chat_bubble, "AI Chat", 1),
                 GestureDetector(
-                  onTap: () => setState(() => _currentIndex = 2),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF4F46E5)]),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 26),
+                  onTap: () => _goToChat(openCamera: true),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          gradient: kEduvaGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text("Scan", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    ],
                   ),
                 ),
-                _navButton(Icons.auto_graph_outlined, Icons.auto_graph, "Progress", 3),
+                _navButton(Icons.school_outlined, Icons.school, "AI Classroom", 3),
                 _navButton(Icons.person_outline, Icons.person, "Profile", 4),
               ],
             ),
@@ -110,12 +132,12 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isSelected ? activeIcon : icon, color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600, size: 24),
-            Text(label, style: TextStyle(color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600, fontSize: 11)),
+            Icon(isSelected ? activeIcon : icon, color: isSelected ? kEduvaPrimary : Colors.grey.shade600, size: 24),
+            Text(label, style: TextStyle(color: isSelected ? kEduvaPrimary : Colors.grey.shade600, fontSize: 10)),
           ],
         ),
       ),
@@ -134,7 +156,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: const Color(0xFF2563EB), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.token, color: Colors.white, size: 18)),
+            Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: kEduvaPrimary, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.token, color: Colors.white, size: 18)),
             const SizedBox(width: 8),
             const Text("EDUVA", style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A))),
           ],
@@ -148,7 +170,7 @@ class HomeScreen extends StatelessWidget {
               },
               icon: Icon(UserState.isLoggedIn ? Icons.person : Icons.login, size: 16),
               label: Text(UserState.isLoggedIn ? UserState.name.split(' ')[0] : "Log In"),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: kEduvaPrimary, foregroundColor: Colors.white),
             ),
           )
         ],
@@ -170,11 +192,11 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text("Welcome to", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
-                        const Text("Eduva ✨", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                        const Text("Eduva 鉁�", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
                         const SizedBox(height: 8),
                         const Text("Eduva is an AI-powered learning platform built to make quality education simple, interactive and accessible for every student.", style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
                         const SizedBox(height: 10),
-                        const Text("That's why we created Edu Sir — your personal AI teacher.", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                        const Text("That's why we created Edu Sir 鈥� your personal AI teacher.", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kEduvaPrimary)),
                       ],
                     ),
                   ),
@@ -185,7 +207,7 @@ class HomeScreen extends StatelessWidget {
                       height: 190,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.school, size: 60, color: Color(0xFF2563EB))),
+                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.school, size: 60, color: kEduvaPrimary)),
                     ),
                   ),
                 ],
@@ -196,7 +218,7 @@ class HomeScreen extends StatelessWidget {
               onTap: onAskDoubtTab,
               child: Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF4F46E5)]), borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(gradient: kEduvaGradient, borderRadius: BorderRadius.circular(16)),
                 child: const Row(
                   children: [
                     Icon(Icons.camera_alt, color: Colors.white, size: 30),
@@ -235,6 +257,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passController = TextEditingController();
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    _passController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -248,14 +277,14 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Column(
                   children: [
-                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.school, size: 50, color: Color(0xFF2563EB))),
+                    Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.school, size: 50, color: kEduvaPrimary)),
                     const SizedBox(height: 10),
                     const Text("EDUVA", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
                   ],
                 ),
               ),
               const SizedBox(height: 30),
-              const Text("Welcome Back! 👋", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text("Welcome Back! 馃憢", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               TextField(controller: _emailController, decoration: InputDecoration(hintText: "Email or Phone", prefixIcon: const Icon(Icons.email_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
               const SizedBox(height: 14),
@@ -277,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (_emailController.text.isNotEmpty) UserState.email = _emailController.text;
                     Navigator.pop(context);
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                  style: ElevatedButton.styleFrom(backgroundColor: kEduvaPrimary),
                   child: const Text("Log In", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
@@ -288,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text("Don't have an account? "),
                   GestureDetector(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
-                    child: const Text("Sign Up", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                    child: const Text("Sign Up", style: TextStyle(color: kEduvaPrimary, fontWeight: FontWeight.bold)),
                   )
                 ],
               )
@@ -316,6 +345,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String _classVal = "Class 11th";
 
   @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    _aimCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -327,7 +365,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             TextField(controller: _nameCtrl, decoration: InputDecoration(hintText: "Full Name", prefixIcon: const Icon(Icons.person_outline), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _classVal,
+              initialValue: _classVal,
               decoration: InputDecoration(prefixIcon: const Icon(Icons.school_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
               items: ["Class 9th", "Class 10th", "Class 11th", "Class 12th", "Dropper"].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
               onChanged: (v) => setState(() => _classVal = v!),
@@ -338,7 +376,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
             TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(hintText: "Phone Number", prefixIcon: const Icon(Icons.phone_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
             const SizedBox(height: 12),
             TextField(controller: _aimCtrl, decoration: InputDecoration(hintText: "Target Goal / Aim (e.g. JEE, NEET, Board 95%)", prefixIcon: const Icon(Icons.flag_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "鈿狅笍 Note: OTP verification abhi implement nahi hai (is啶曕 啶侧た啶� Firebase Phone Auth chahiye).",
+                style: TextStyle(fontSize: 11, color: Colors.orange),
+              ),
+            ),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -354,7 +400,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Account created successfully!")));
                   Navigator.pop(context);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                style: ElevatedButton.styleFrom(backgroundColor: kEduvaPrimary),
                 child: const Text("Create Account & Start", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             )
@@ -387,7 +433,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Reset link sent to your email!")));
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+              style: ElevatedButton.styleFrom(backgroundColor: kEduvaPrimary),
               child: const Text("Send Reset Link", style: TextStyle(color: Colors.white)),
             )
           ],
@@ -397,9 +443,19 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// 5. ASK DOUBT SCREEN (GROQ ENGINE - LLAMA 3.1 8B INSTANT)
+// Simple chat message model for the AI Chat screen
+class ChatMessage {
+  final String role; // "user" or "assistant"
+  final String text;
+  final File? image;
+  ChatMessage({required this.role, required this.text, this.image});
+}
+
+// 5. AI CHAT SCREEN (GROQ ENGINE - chat style UI)
 class AskDoubtScreen extends StatefulWidget {
-  const AskDoubtScreen({super.key});
+  final bool autoOpenCamera;
+  final VoidCallback? onCameraConsumed;
+  const AskDoubtScreen({super.key, this.autoOpenCamera = false, this.onCameraConsumed});
 
   @override
   State<AskDoubtScreen> createState() => _AskDoubtScreenState();
@@ -409,24 +465,56 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   final TextEditingController _controller = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final stt.SpeechToText _speech = stt.SpeechToText();
+  final ScrollController _scrollController = ScrollController();
 
-  File? _imageFile;
+  File? _pendingImage;
   bool _isListening = false;
   bool _isLoading = false;
-  String? _response;
   String _activeSubject = "Mathematics";
+  final List<ChatMessage> _messages = [];
 
-  // आपकी Groq API Key
+  // 鈿狅笍 TODO: Isse app se hata kar apne backend server pe le jao (production ke liye zaroori).
   final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
+
+  static const String _textModel = "openai/gpt-oss-20b";
+  static const String _visionModel = "qwen/qwen3.6-27b";
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoOpenCamera) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openCamera();
+        widget.onCameraConsumed?.call();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    _speech.stop();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   Future<void> _openCamera() async {
     try {
       final XFile? photo = await _picker.pickImage(source: ImageSource.camera, imageQuality: 70);
       if (photo != null) {
-        setState(() {
-          _imageFile = File(photo.path);
-          _controller.text = "Please solve the question in this image step by step.";
-        });
+        setState(() => _pendingImage = File(photo.path));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Camera error: $e")));
@@ -437,10 +525,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
       if (image != null) {
-        setState(() {
-          _imageFile = File(image.path);
-          _controller.text = "Please explain the concept and solution for this problem.";
-        });
+        setState(() => _pendingImage = File(image.path));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gallery error: $e")));
@@ -453,9 +538,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
       if (available) {
         setState(() => _isListening = true);
         _speech.listen(onResult: (val) {
-          setState(() {
-            _controller.text = val.recognizedWords;
-          });
+          setState(() => _controller.text = val.recognizedWords);
         });
       }
     } else {
@@ -464,21 +547,49 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     }
   }
 
+  void _sendQuickPrompt(String prompt) {
+    _controller.text = prompt;
+    _solveWithAI();
+  }
+
   Future<void> _solveWithAI() async {
     final query = _controller.text.trim();
-    if (query.isEmpty && _imageFile == null) {
+    final imageToSend = _pendingImage;
+
+    if (query.isEmpty && imageToSend == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("कृपया सवाल लिखें, फ़ोटो लें या बोलकर पूछें!")),
+        const SnackBar(content: Text("啶曕啶く啶� 啶膏さ啶距げ 啶侧た啶栢啶�, 啶ぜ啷嬥啷� 啶侧啶� 啶ぞ 啶啶侧啶� 啶啶涏啶�!")),
       );
       return;
     }
 
     setState(() {
+      _messages.add(ChatMessage(role: "user", text: query.isNotEmpty ? query : "(Photo)", image: imageToSend));
+      _controller.clear();
+      _pendingImage = null;
       _isLoading = true;
-      _response = null;
     });
+    _scrollToBottom();
 
     try {
+      final bool hasImage = imageToSend != null;
+      final String modelToUse = hasImage ? _visionModel : _textModel;
+
+      dynamic userMessageContent;
+      if (hasImage) {
+        final bytes = await imageToSend.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        final lowerPath = imageToSend.path.toLowerCase();
+        final mimeType = lowerPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+        userMessageContent = [
+          {"type": "text", "text": query.isNotEmpty ? query : "啶曕啶く啶� 啶囙じ 啶掂た啶粪く 啶曕 啶掂た啶膏啶むぞ啶� 啶膏 啶膏ぎ啶澿ぞ啶忇啷�"},
+          {"type": "image_url", "image_url": {"url": "data:$mimeType;base64,$base64Image"}}
+        ];
+      } else {
+        userMessageContent = query;
+      }
+
       final res = await http.post(
         Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
         headers: {
@@ -486,19 +597,16 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
           'Authorization': 'Bearer $_groqApiKey',
         },
         body: jsonEncode({
-          "model": "llama-3.1-8b-instant",
+          "model": modelToUse,
           "messages": [
             {
               "role": "system",
               "content": "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer in simple Hindi/Hinglish."
             },
-            {
-              "role": "user",
-              "content": query.isNotEmpty ? query : "कृपया इस विषय को विस्तार से समझाएं।"
-            }
+            {"role": "user", "content": userMessageContent}
           ],
           "temperature": 0.5,
-          "max_tokens": 1024
+          "max_completion_tokens": 1024
         }),
       ).timeout(const Duration(seconds: 30));
 
@@ -506,153 +614,281 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
         final content = data['choices'][0]['message']['content'];
         setState(() {
-          _response = content;
+          _messages.add(ChatMessage(role: "assistant", text: content));
           UserState.doubtsSolved += 1;
         });
       } else {
         setState(() {
-          _response = "Groq Server Error (${res.statusCode}):\n${res.body}";
+          _messages.add(ChatMessage(role: "assistant", text: "鈿狅笍 Groq Server Error (${res.statusCode}):\n${res.body}"));
         });
       }
     } catch (e) {
       setState(() {
-        _response = "Connection Error: $e\nकृपया इंटरनेट कनेक्शन जांचें।";
+        _messages.add(ChatMessage(role: "assistant", text: "鈿狅笍 Connection Error: $e\n啶曕啶く啶� 啶囙啶熰ぐ啶ㄠ啶� 啶曕え啷囙啷嵿ざ啶� 啶溹ぞ啶傕啷囙啷�"));
       });
     } finally {
       setState(() => _isLoading = false);
+      _scrollToBottom();
     }
   }
+
+  static const List<Map<String, dynamic>> _quickActions = [
+    {"icon": Icons.school_outlined, "label": "Explain a topic"},
+    {"icon": Icons.functions, "label": "Solve this question"},
+    {"icon": Icons.description_outlined, "label": "Write notes"},
+    {"icon": Icons.emoji_emotions_outlined, "label": "Make it simple"},
+    {"icon": Icons.menu_book_outlined, "label": "Practice questions"},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("Ask Edu Sir (Doubt Solver)", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("AI Chat", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            onSelected: (v) {
+              if (v == "clear") setState(() => _messages.clear());
+            },
+            itemBuilder: (_) => [const PopupMenuItem(value: "clear", child: Text("Clear Chat"))],
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SingleChildScrollView(
+      body: Column(
+        children: [
+          // Subject selector
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: ["Mathematics", "Physics", "Chemistry", "Biology"].map((sub) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(sub),
+                      label: Text(sub, style: const TextStyle(fontSize: 12)),
                       selected: _activeSubject == sub,
-                      selectedColor: const Color(0xFF2563EB),
-                      labelStyle: TextStyle(color: _activeSubject == sub ? Colors.white : Colors.black),
+                      selectedColor: kEduvaPrimary,
+                      labelStyle: TextStyle(color: _activeSubject == sub ? Colors.white : Colors.black87),
                       onSelected: (val) => setState(() => _activeSubject = sub),
                     ),
                   );
                 }).toList(),
               ),
             ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _controller,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: "✍️ अपना सवाल यहाँ लिखें, फ़ोटो खींचें या बोलें...",
-                      border: InputBorder.none,
-                    ),
+          ),
+
+          // Chat body
+          Expanded(
+            child: _messages.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(14),
+                    itemCount: _messages.length + (_isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == _messages.length) {
+                        return _buildTypingBubble();
+                      }
+                      return _buildMessageBubble(_messages[index]);
+                    },
                   ),
-                  if (_imageFile != null) ...[
-                    const Divider(),
-                    Row(
-                      children: [
-                        const Icon(Icons.image, color: Color(0xFF2563EB)),
-                        const SizedBox(width: 8),
-                        const Text("Image Attached", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () => setState(() => _imageFile = null),
-                        )
-                      ],
-                    ),
-                  ],
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      TextButton.icon(icon: const Icon(Icons.camera_alt), label: const Text("Camera"), onPressed: _openCamera),
-                      TextButton.icon(icon: const Icon(Icons.photo_library), label: const Text("Gallery"), onPressed: _openGallery),
-                      TextButton.icon(
-                        icon: Icon(_isListening ? Icons.mic_off : Icons.mic, color: _isListening ? Colors.red : const Color(0xFF2563EB)),
-                        label: Text(_isListening ? "Listening..." : "Voice"),
-                        onPressed: _listenVoice,
-                      ),
-                    ],
-                  )
+          ),
+
+          // Pending image preview
+          if (_pendingImage != null)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                children: [
+                  ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(_pendingImage!, height: 40, width: 40, fit: BoxFit.cover)),
+                  const SizedBox(width: 10),
+                  const Expanded(child: Text("Image attached", style: TextStyle(fontWeight: FontWeight.w600, color: kEduvaPrimary))),
+                  IconButton(icon: const Icon(Icons.close, size: 18, color: Colors.red), onPressed: () => setState(() => _pendingImage = null)),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : _solveWithAI,
-                icon: _isLoading
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.auto_awesome, color: Colors.white),
-                label: Text(
-                  _isLoading ? "Edu Sir हल कर रहे हैं..." : "Solve My Doubt Now 🚀",
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
-                ),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
-              ),
-            ),
-            if (_response != null) ...[
-              const SizedBox(height: 18),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF93C5FD)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+
+          // Input bar
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
                       children: [
-                        const Icon(Icons.school, color: Color(0xFF2563EB)),
-                        const SizedBox(width: 8),
-                        const Text("Edu Sir का समाधान:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E3A8A))),
-                        const Spacer(),
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            decoration: const InputDecoration(hintText: "Ask anything...", border: InputBorder.none),
+                          ),
+                        ),
                         IconButton(
-                          icon: const Icon(Icons.copy, size: 18),
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: _response!));
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("समाधान कॉपी हो गया!")));
-                          },
-                        )
+                          icon: Icon(_isListening ? Icons.mic : Icons.mic_none, color: _isListening ? Colors.red : Colors.grey.shade600, size: 20),
+                          onPressed: _listenVoice,
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.camera_alt_outlined, color: Colors.grey.shade600, size: 20),
+                          onPressed: _openCamera,
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.photo_library_outlined, color: Colors.grey.shade600, size: 20),
+                          onPressed: _openGallery,
+                        ),
                       ],
                     ),
-                    const Divider(),
-                    SelectableText(_response!, style: const TextStyle(fontSize: 14, height: 1.5)),
-                  ],
+                  ),
                 ),
-              )
-            ]
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _isLoading ? null : _solveWithAI,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: _isLoading ? null : kEduvaGradient,
+                      color: _isLoading ? Colors.grey.shade300 : null,
+                      shape: BoxShape.circle,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.send, color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Try asking Edu Sir", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _quickActions.map((qa) {
+                    return ActionChip(
+                      avatar: Icon(qa["icon"] as IconData, size: 16, color: kEduvaPrimary),
+                      label: Text(qa["label"] as String, style: const TextStyle(fontSize: 12)),
+                      backgroundColor: const Color(0xFFEFF6FF),
+                      onPressed: () => _sendQuickPrompt(qa["label"] as String),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          Center(
+            child: Column(
+              children: [
+                CircleAvatar(radius: 36, backgroundColor: const Color(0xFFEFF6FF), child: Icon(Icons.school, color: kEduvaPrimary, size: 36)),
+                const SizedBox(height: 10),
+                const Text("Edu Sir aapka intezaar kar raha hai!", style: TextStyle(color: Colors.grey)),
+                const Text("Apna sawaal type karein, bolein ya photo khinche.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage msg) {
+    final isUser = msg.role == "user";
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(radius: 16, backgroundColor: const Color(0xFFEFF6FF), child: Icon(Icons.school, size: 16, color: kEduvaPrimary)),
+            const SizedBox(width: 8),
           ],
-        ),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isUser)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 2, left: 2),
+                    child: Text("Edu Sir", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: kEduvaPrimary)),
+                  ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                  decoration: BoxDecoration(
+                    gradient: isUser ? kEduvaGradient : null,
+                    color: isUser ? null : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isUser ? null : Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (msg.image != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(msg.image!, height: 140, fit: BoxFit.cover),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      SelectableText(
+                        msg.text,
+                        style: TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypingBubble() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          CircleAvatar(radius: 16, backgroundColor: const Color(0xFFEFF6FF), child: Icon(Icons.school, size: 16, color: kEduvaPrimary)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+            child: const Text("Edu Sir is typing...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+          ),
+        ],
       ),
     );
   }
@@ -672,20 +908,32 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("AI Classroom & 3D Lab"), backgroundColor: Colors.white),
+      appBar: AppBar(title: const Text("AI Classroom"), backgroundColor: Colors.white),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
               children: [
-                Expanded(child: ElevatedButton(onPressed: () => setState(() => is3DMode = false), child: const Text("Whiteboard"))),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => is3DMode = false),
+                    style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? Colors.grey.shade200 : kEduvaPrimary, foregroundColor: is3DMode ? Colors.black87 : Colors.white),
+                    child: const Text("Board Mode"),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: ElevatedButton(onPressed: () => setState(() => is3DMode = true), child: const Text("3D View"))),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => is3DMode = true),
+                    style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? kEduvaPrimary : Colors.grey.shade200, foregroundColor: is3DMode ? Colors.white : Colors.black87),
+                    child: const Text("3D Mode"),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 20),
-            Container(height: 220, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(16)), child: Center(child: Icon(is3DMode ? Icons.view_in_ar : Icons.favorite, size: 80, color: Colors.redAccent))),
+            Container(height: 220, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(16)), child: Center(child: Icon(is3DMode ? Icons.view_in_ar : Icons.dashboard_customize, size: 80, color: kEduvaPrimary))),
           ],
         ),
       ),
@@ -693,7 +941,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
-// 7. CAREER GUIDANCE
+// 7. CAREER GUIDANCE (accessible from Profile)
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -705,8 +953,8 @@ class CareerGuidanceScreen extends StatelessWidget {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills • ₹12 LPA")),
-            ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills • ₹10 LPA")),
+            ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills 鈥� 鈧�12 LPA")),
+            ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills 鈥� 鈧�10 LPA")),
           ],
         ),
       ),
@@ -723,14 +971,14 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const CircleAvatar(radius: 40, backgroundColor: Color(0xFF2563EB), child: Icon(Icons.person, size: 48, color: Colors.white)),
+            const CircleAvatar(radius: 40, backgroundColor: kEduvaPrimary, child: Icon(Icons.person, size: 48, color: Colors.white)),
             const SizedBox(height: 10),
             Text(UserState.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text("${UserState.studentClass} • Goal: ${UserState.targetGoal}", style: const TextStyle(color: Colors.grey)),
+            Text("${UserState.studentClass} 鈥� Goal: ${UserState.targetGoal}", style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 20),
             Card(
               child: Column(
@@ -740,9 +988,18 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareerGuidanceScreen())),
+                icon: const Icon(Icons.explore_outlined, color: kEduvaPrimary),
+                label: const Text("Explore Career Guidance", style: TextStyle(color: kEduvaPrimary)),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
+}    
