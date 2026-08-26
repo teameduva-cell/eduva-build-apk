@@ -397,7 +397,7 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// 5. ASK DOUBT SCREEN (DUAL-AUTH ENGINE)
+// 5. ASK DOUBT SCREEN (GROQ ENGINE)
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -416,16 +416,16 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   String? _response;
   String _activeSubject = "Mathematics";
 
-  // Google Access Token (Split to prevent GitHub auto-scan block)
-  final String _authToken = "AQ.Ab8RN6LyLp" + "9z9rCp8ALhwED9hG" + "zZf2ayQPfhPzWArW65iy4ZKg";
+  // ⚠️ अपनी Groq Key यहाँ डालें:
+  final String _groqApiKey = "YOUR_GROQ_API_KEY_HERE";
 
   Future<void> _openCamera() async {
     try {
-      final XFile? photo = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      final XFile? photo = await _picker.pickImage(source: ImageSource.camera, imageQuality: 70);
       if (photo != null) {
         setState(() {
           _imageFile = File(photo.path);
-          _controller.text = "Please solve the question in the attached image step by step.";
+          _controller.text = "Please solve the question in this image step by step.";
         });
       }
     } catch (e) {
@@ -435,15 +435,15 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
   Future<void> _openGallery() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
       if (image != null) {
         setState(() {
           _imageFile = File(image.path);
-          _controller.text = "Please explain the concept and solution for this uploaded problem.";
+          _controller.text = "Please explain the concept and solution for this problem.";
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gallery error: $e")));
     }
   }
 
@@ -467,7 +467,9 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   Future<void> _solveWithAI() async {
     final query = _controller.text.trim();
     if (query.isEmpty && _imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please write, snap or record your question!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("कृपया सवाल लिखें, फ़ोटो लें या बोलकर पूछें!")),
+      );
       return;
     }
 
@@ -477,77 +479,62 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     });
 
     try {
-      List<Map<String, dynamic>> parts = [];
-      parts.add({
-        'text': "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Question: $query. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer."
-      });
+      List<Map<String, dynamic>> userContent = [];
 
       if (_imageFile != null) {
         final bytes = await _imageFile!.readAsBytes();
-        parts.add({
-          'inlineData': {
-            'mimeType': 'image/jpeg',
-            'data': base64Encode(bytes)
+        final base64Image = base64Encode(bytes);
+        userContent.add({
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/jpeg;base64,$base64Image"
           }
         });
       }
 
-      // Method 1: Bearer Authorization Header
-      var url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent');
-      var res = await http.post(
-        url,
+      userContent.add({
+        "type": "text",
+        "text": query.isNotEmpty ? query : "कृपया इस प्रश्न को विस्तार से हल करें।"
+      });
+
+      final res = await http.post(
+        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $_groqApiKey',
         },
         body: jsonEncode({
-          'contents': [
-            {'parts': parts}
-          ]
+          "model": _imageFile != null ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer in simple Hinglish/Hindi/English."
+            },
+            {
+              "role": "user",
+              "content": userContent
+            }
+          ],
+          "temperature": 0.5,
+          "max_tokens": 1200
         }),
       ).timeout(const Duration(seconds: 30));
 
       if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final content = data['candidates'][0]['content']['parts'][0]['text'];
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        final content = data['choices'][0]['message']['content'];
         setState(() {
           _response = content;
           UserState.doubtsSolved += 1;
         });
-        return;
-      }
-
-      // Method 2: Query Param Fallback
-      var urlFallback = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_authToken');
-      var resFallback = await http.post(
-        urlFallback,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': _authToken,
-        },
-        body: jsonEncode({
-          'contents': [
-            {'parts': parts}
-          ]
-        }),
-      ).timeout(const Duration(seconds: 30));
-
-      if (resFallback.statusCode == 200) {
-        final data = jsonDecode(resFallback.body);
-        final content = data['candidates'][0]['content']['parts'][0]['text'];
+      } else {
         setState(() {
-          _response = content;
-          UserState.doubtsSolved += 1;
+          _response = "Groq Server Error (${res.statusCode}):\n${res.body}";
         });
-        return;
       }
-
-      setState(() {
-        _response = "Edu Sir Server Issue (${res.statusCode}):\n${res.body}";
-      });
     } catch (e) {
       setState(() {
-        _response = "Connection Error: $e\nPlease check your internet connection.";
+        _response = "Connection Error: $e\nकृपया इंटरनेट कनेक्शन जांचें।";
       });
     } finally {
       setState(() => _isLoading = false);
@@ -557,7 +544,11 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Ask Edu Sir (Doubt Solver)"), backgroundColor: Colors.white),
+      appBar: AppBar(
+        title: const Text("Ask Edu Sir (Doubt Solver)", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -582,13 +573,20 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade300)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
               child: Column(
                 children: [
                   TextField(
                     controller: _controller,
                     maxLines: 4,
-                    decoration: const InputDecoration(hintText: "✍️ Type question, take photo or record voice...", border: InputBorder.none),
+                    decoration: const InputDecoration(
+                      hintText: "✍️ अपना सवाल यहाँ लिखें, फ़ोटो खींचें या बोलें...",
+                      border: InputBorder.none,
+                    ),
                   ),
                   if (_imageFile != null) ...[
                     const Divider(),
@@ -598,7 +596,10 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                         const SizedBox(width: 8),
                         const Text("Image Attached", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
                         const Spacer(),
-                        IconButton(icon: const Icon(Icons.close, color: Colors.red), onPressed: () => setState(() => _imageFile = null))
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          onPressed: () => setState(() => _imageFile = null),
+                        )
                       ],
                     ),
                   ],
@@ -607,7 +608,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       TextButton.icon(icon: const Icon(Icons.camera_alt), label: const Text("Camera"), onPressed: _openCamera),
-                      TextButton.icon(icon: const Icon(Icons.photo_library), label: const Text("Upload"), onPressed: _openGallery),
+                      TextButton.icon(icon: const Icon(Icons.photo_library), label: const Text("Gallery"), onPressed: _openGallery),
                       TextButton.icon(
                         icon: Icon(_isListening ? Icons.mic_off : Icons.mic, color: _isListening ? Colors.red : const Color(0xFF2563EB)),
                         label: Text(_isListening ? "Listening..." : "Voice"),
@@ -624,8 +625,13 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               height: 50,
               child: ElevatedButton.icon(
                 onPressed: _isLoading ? null : _solveWithAI,
-                icon: _isLoading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white)) : const Icon(Icons.auto_awesome, color: Colors.white),
-                label: Text(_isLoading ? "Edu Sir is Solving..." : "Solve My Doubt Now 🚀", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                icon: _isLoading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.auto_awesome, color: Colors.white),
+                label: Text(
+                  _isLoading ? "Edu Sir हल कर रहे हैं..." : "Solve My Doubt Now 🚀",
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+                ),
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
               ),
             ),
@@ -634,7 +640,11 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF93C5FD))),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF93C5FD)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -642,13 +652,13 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                       children: [
                         const Icon(Icons.school, color: Color(0xFF2563EB)),
                         const SizedBox(width: 8),
-                        const Text("Edu Sir's Solution:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E3A8A))),
+                        const Text("Edu Sir का समाधान:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E3A8A))),
                         const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.copy, size: 18),
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: _response!));
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Solution copied!")));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("समाधान कॉपी हो गया!")));
                           },
                         )
                       ],
