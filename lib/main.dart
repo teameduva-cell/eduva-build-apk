@@ -24,6 +24,8 @@ class UserState {
   static int doubtsSolved = 0;
   static int streakDays = 1;
   static bool isLoggedIn = false;
+  static int quizScore = 0;
+  static List<String> savedDoubts = [];
 }
 
 class EduvaMasterApp extends StatelessWidget {
@@ -47,7 +49,7 @@ class EduvaMasterApp extends StatelessWidget {
   }
 }
 
-// Brand Look & Gradients
+// Brand Colors & Gradients
 const kEduvaGradient = LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)]);
 const kEduvaPrimary = Color(0xFF4F46E5);
 
@@ -75,13 +77,12 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
       HomeScreen(onAskDoubtTab: () => _goToChat()),
       AskDoubtScreen(autoOpenCamera: _autoOpenCamera, onCameraConsumed: () => setState(() => _autoOpenCamera = false)),
       const AIClassroomScreen(),
+      const DailyQuizScreen(),
       ProfileScreen(onRefresh: () => setState(() {})),
     ];
 
-    final pageForNav = {0: 0, 1: 1, 3: 2, 4: 3};
-
     return Scaffold(
-      body: pages[pageForNav[_currentIndex] ?? 0],
+      body: pages[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -115,7 +116,7 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
                     ],
                   ),
                 ),
-                _navButton(Icons.school_outlined, Icons.school, "AI Classroom", 3),
+                _navButton(Icons.quiz_outlined, Icons.quiz, "Daily Quiz", 3),
                 _navButton(Icons.person_outline, Icons.person, "Profile", 4),
               ],
             ),
@@ -235,6 +236,57 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _actionCard(
+                    context,
+                    "AI Classroom & 3D Lab",
+                    "Interactive models & board",
+                    Icons.view_in_ar,
+                    Colors.orange,
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AIClassroomScreen())),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _actionCard(
+                    context,
+                    "Career Guidance",
+                    "Roadmaps & Salaries",
+                    Icons.explore,
+                    Colors.purple,
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareerGuidanceScreen())),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionCard(BuildContext context, String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(radius: 18, backgroundColor: color.withOpacity(0.12), child: Icon(icon, color: color, size: 20)),
+            const SizedBox(height: 10),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
       ),
@@ -374,15 +426,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(hintText: "Phone Number", prefixIcon: const Icon(Icons.phone_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
             const SizedBox(height: 12),
             TextField(controller: _aimCtrl, decoration: InputDecoration(hintText: "Target Goal / Aim (e.g. JEE, NEET, Board 95%)", prefixIcon: const Icon(Icons.flag_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
-            const SizedBox(height: 8),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "⚠️ Note: Firebase OTP verification will be integrated in production.",
-                style: TextStyle(fontSize: 11, color: Colors.orange),
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -613,6 +657,9 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         setState(() {
           _messages.add(ChatMessage(role: "assistant", text: content));
           UserState.doubtsSolved += 1;
+          if (query.isNotEmpty) {
+            UserState.savedDoubts.insert(0, query);
+          }
         });
       } else {
         setState(() {
@@ -907,7 +954,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// 6. AI CLASSROOM
+// 6. ADVANCED AI CLASSROOM & 3D LAB (INTERACTIVE)
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -917,65 +964,392 @@ class AIClassroomScreen extends StatefulWidget {
 
 class _AIClassroomScreenState extends State<AIClassroomScreen> {
   bool is3DMode = false;
+  int selectedModel = 0;
+  final List<Offset?> _whiteboardPoints = [];
+
+  final List<Map<String, dynamic>> _models3D = [
+    {"name": "Human Heart", "desc": "4 Chambers • Circulatory System", "icon": Icons.favorite, "color": Colors.red},
+    {"name": "Electric Motor", "desc": "Fleming's Left Hand Rule • Physics", "icon": Icons.electric_bolt, "color": Colors.blue},
+    {"name": "Solar System", "desc": "Gravitation & Kepler's Laws", "icon": Icons.public, "color": Colors.amber},
+    {"name": "Bohr Atom", "desc": "Electrons & Quantum Energy Levels", "icon": Icons.bubble_chart, "color": Colors.purple},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("AI Classroom"), backgroundColor: Colors.white),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
+      appBar: AppBar(title: const Text("AI Classroom & 3D Lab"), backgroundColor: Colors.white),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: () => setState(() => is3DMode = false),
-                    style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? Colors.grey.shade200 : kEduvaPrimary, foregroundColor: is3DMode ? Colors.black87 : Colors.white),
-                    child: const Text("Board Mode"),
+                    icon: const Icon(Icons.edit_note),
+                    label: const Text("Live Board"),
+                    style: ElevatedButton.styleFrom(backgroundColor: !is3DMode ? kEduvaPrimary : Colors.grey.shade200, foregroundColor: !is3DMode ? Colors.white : Colors.black87),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: () => setState(() => is3DMode = true),
+                    icon: const Icon(Icons.view_in_ar),
+                    label: const Text("3D Models"),
                     style: ElevatedButton.styleFrom(backgroundColor: is3DMode ? kEduvaPrimary : Colors.grey.shade200, foregroundColor: is3DMode ? Colors.white : Colors.black87),
-                    child: const Text("3D Mode"),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            Container(height: 220, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(16)), child: Center(child: Icon(is3DMode ? Icons.view_in_ar : Icons.dashboard_customize, size: 80, color: kEduvaPrimary))),
-          ],
+          ),
+          Expanded(
+            child: is3DMode ? _build3DLabView() : _buildLiveWhiteboard(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveWhiteboard() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Draw or write rough formulas below:", style: TextStyle(fontSize: 12, color: Colors.grey)),
+              TextButton.icon(
+                onPressed: () => setState(() => _whiteboardPoints.clear()),
+                icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                label: const Text("Clear Board", style: TextStyle(color: Colors.red, fontSize: 12)),
+              )
+            ],
+          ),
         ),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade700),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    RenderBox renderBox = context.findRenderObject() as RenderBox;
+                    _whiteboardPoints.add(renderBox.globalToLocal(details.globalPosition));
+                  });
+                },
+                onPanEnd: (details) => _whiteboardPoints.add(null),
+                child: CustomPaint(
+                  painter: WhiteboardPainter(_whiteboardPoints),
+                  size: Size.infinite,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _build3DLabView() {
+    final active = _models3D[selectedModel];
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 220,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: (active["color"] as Color).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: (active["color"] as Color).withOpacity(0.3)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(active["icon"] as IconData, size: 80, color: active["color"] as Color),
+                const SizedBox(height: 12),
+                Text(active["name"] as String, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: active["color"] as Color)),
+                Text(active["desc"] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text("Select Interactive Topic:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _models3D.length,
+              itemBuilder: (context, i) {
+                final item = _models3D[i];
+                final isSel = selectedModel == i;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: isSel ? const Color(0xFFEFF6FF) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: isSel ? kEduvaPrimary : Colors.grey.shade200),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(backgroundColor: (item["color"] as Color).withOpacity(0.1), child: Icon(item["icon"] as IconData, color: item["color"] as Color)),
+                    title: Text(item["name"] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(item["desc"] as String, style: const TextStyle(fontSize: 11)),
+                    trailing: isSel ? const Icon(Icons.check_circle, color: kEduvaPrimary) : null,
+                    onTap: () => setState(() => selectedModel = i),
+                  ),
+                );
+              },
+            ),
+          )
+        ],
       ),
     );
   }
 }
 
-// 7. CAREER GUIDANCE
+class WhiteboardPainter extends CustomPainter {
+  final List<Offset?> points;
+  WhiteboardPainter(this.points);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = Colors.cyanAccent
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3.5;
+
+    for (int i = 0; i < points.length - 1; i++) {
+      if (points[i] != null && points[i + 1] != null) {
+        canvas.drawLine(points[i]!, points[i + 1]!, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// 7. EXPANDED CAREER GUIDANCE & ROADMAPS
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
+
+  final List<Map<String, dynamic>> roadmaps = const [
+    {
+      "title": "Software / AI Engineer",
+      "exam": "JEE Main & Advanced / CUET",
+      "duration": "4 Years (B.Tech)",
+      "salary": "₹8 - 25 LPA Average",
+      "steps": ["Class 11-12: PCM + Coding Basics", "Crack JEE / State CET Exams", "4 Yrs B.Tech in CS/AI", "Internships & AI Projects"]
+    },
+    {
+      "title": "Doctor (MBBS / Specialist)",
+      "exam": "NEET UG",
+      "duration": "5.5 Years + MD/MS",
+      "salary": "₹10 - 30 LPA Average",
+      "steps": ["Class 11-12: PCB + Biology Focus", "Crack NEET UG Exam", "5.5 Yrs MBBS with Internship", "Crack NEET PG for Specialization"]
+    },
+    {
+      "title": "Defense Officer (Army/Navy/Air Force)",
+      "exam": "NDA & NA Exam / SSB",
+      "duration": "3 Years Academy + 1 Yr Training",
+      "salary": "₹12 - 18 LPA + Perks",
+      "steps": ["Class 12th PCM", "Crack UPSC NDA Exam", "Clear 5-day SSB Interview", "Join NDA Khadakwasla"]
+    },
+    {
+      "title": "Civil Services (IAS / IPS)",
+      "exam": "UPSC CSE",
+      "duration": "Graduation + 1-2 Yrs Prep",
+      "salary": "Top Government Scale + Authority",
+      "steps": ["Complete Any Bachelor Degree", "General Studies + Optional Prep", "Crack Prelims, Mains & Interview", "Join LBSNAA Training"]
+    }
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Career Guidance"), backgroundColor: Colors.white),
-      body: const Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills • ₹12 LPA")),
-            ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills • ₹10 LPA")),
-          ],
-        ),
+      appBar: AppBar(title: const Text("Career Roadmaps & Guidance"), backgroundColor: Colors.white),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: roadmaps.length,
+        itemBuilder: (context, index) {
+          final item = roadmaps[index];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(item["title"] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kEduvaPrimary)),
+                    Chip(label: Text(item["salary"] as String, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)), backgroundColor: const Color(0xFFEFF6FF)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text("Target Exam: ${item["exam"]}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                Text("Course Duration: ${item["duration"]}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const Divider(height: 18),
+                const Text("Step-by-Step Roadmap:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(height: 6),
+                Column(
+                  children: (item["steps"] as List<String>).map((step) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.arrow_right, color: kEduvaPrimary),
+                          Expanded(child: Text(step, style: const TextStyle(fontSize: 12))),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                )
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-// 8. PROFILE SCREEN (WITH ACHIEVEMENTS & PROGRESS BARS)
+// 8. DAILY AI PRACTICE QUIZ & TEST SCREEN
+class DailyQuizScreen extends StatefulWidget {
+  const DailyQuizScreen({super.key});
+
+  @override
+  State<DailyQuizScreen> createState() => _DailyQuizScreenState();
+}
+
+class _DailyQuizScreenState extends State<DailyQuizScreen> {
+  int currentQuestion = 0;
+  int? selectedAnswer;
+  int score = 0;
+  bool isFinished = false;
+
+  final List<Map<String, dynamic>> questions = [
+    {
+      "q": "What is the SI unit of Electric Current?",
+      "options": ["Volt", "Ampere", "Ohm", "Watt"],
+      "correct": 1
+    },
+    {
+      "q": "Which gas is released during photosynthesis?",
+      "options": ["Carbon Dioxide", "Nitrogen", "Oxygen", "Hydrogen"],
+      "correct": 2
+    },
+    {
+      "q": "Derivative of sin(x) with respect to x is:",
+      "options": ["cos(x)", "-cos(x)", "tan(x)", "-sin(x)"],
+      "correct": 0
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Daily 5-Min Quiz"), backgroundColor: Colors.white),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: isFinished
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
+                    const SizedBox(height: 16),
+                    Text("Quiz Completed! 🎉", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text("You scored $score out of ${questions.length}", style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          currentQuestion = 0;
+                          selectedAnswer = null;
+                          score = 0;
+                          isFinished = false;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: kEduvaPrimary),
+                      child: const Text("Retake Quiz", style: TextStyle(color: Colors.white)),
+                    )
+                  ],
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Question ${currentQuestion + 1} of ${questions.length}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const SizedBox(height: 12),
+                  Text(questions[currentQuestion]["q"] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  ...List.generate(4, (i) {
+                    final opt = (questions[currentQuestion]["options"] as List)[i];
+                    final isSel = selectedAnswer == i;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: isSel ? const Color(0xFFEFF6FF) : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isSel ? kEduvaPrimary : Colors.grey.shade300),
+                      ),
+                      child: ListTile(
+                        title: Text(opt as String, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                        leading: CircleAvatar(radius: 12, backgroundColor: isSel ? kEduvaPrimary : Colors.grey.shade300, child: Text("${i + 1}", style: const TextStyle(fontSize: 11, color: Colors.white))),
+                        onTap: () => setState(() => selectedAnswer = i),
+                      ),
+                    );
+                  }),
+                  const Spacer(),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: selectedAnswer == null
+                          ? null
+                          : () {
+                              if (selectedAnswer == questions[currentQuestion]["correct"]) {
+                                score += 1;
+                                UserState.quizScore += 10;
+                              }
+                              if (currentQuestion < questions.length - 1) {
+                                setState(() {
+                                  currentQuestion += 1;
+                                  selectedAnswer = null;
+                                });
+                              } else {
+                                setState(() => isFinished = true);
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(backgroundColor: kEduvaPrimary),
+                      child: Text(currentQuestion < questions.length - 1 ? "Next Question" : "Submit Quiz", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  )
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+// 9. PROFILE SCREEN WITH DOUBT HISTORY & STATS
 class ProfileScreen extends StatelessWidget {
   final VoidCallback onRefresh;
   const ProfileScreen({super.key, required this.onRefresh});
@@ -1025,7 +1399,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white, elevation: 0),
+      appBar: AppBar(title: const Text("Profile & History"), backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1061,34 +1435,13 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
-              child: Row(
-                children: [
-                  const CircleAvatar(radius: 18, backgroundColor: Color(0xFFEFF6FF), child: Icon(Icons.school, color: kEduvaPrimary, size: 18)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Message from Edu Sir", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text("Great job, ${UserState.name.split(' ')[0]}! Keep the streak going 🔥", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
               child: Row(
                 children: [
                   _statBox(Icons.local_fire_department, Colors.orange, "${UserState.streakDays}", "Day Streak"),
                   _statBox(Icons.check_circle, Colors.green, "${UserState.doubtsSolved}", "Doubts Solved"),
-                  _statBox(Icons.star, Colors.amber, "Lvl 1", "Level"),
+                  _statBox(Icons.star, Colors.amber, "${UserState.quizScore} pts", "Quiz Points"),
                 ],
               ),
             ),
@@ -1110,6 +1463,31 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            if (UserState.savedDoubts.isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Recently Asked Doubts", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    ...UserState.savedDoubts.take(4).map((d) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.history, size: 16, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(d, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+                        ],
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
