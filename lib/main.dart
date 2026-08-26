@@ -49,7 +49,6 @@ class EduvaMasterApp extends StatelessWidget {
   }
 }
 
-// Brand Colors & Gradients
 const kEduvaGradient = LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)]);
 const kEduvaPrimary = Color(0xFF4F46E5);
 
@@ -501,7 +500,7 @@ class ChatMessage {
   ChatMessage({required this.role, required this.text, this.image});
 }
 
-// 5. AI CHAT SCREEN (GROQ ENGINE WITH PLAIN MATH FORMATTING)
+// 5. AI CHAT SCREEN (PLAIN MATH STUDENT READABLE FORMAT)
 class AskDoubtScreen extends StatefulWidget {
   final bool autoOpenCamera;
   final VoidCallback? onCameraConsumed;
@@ -525,19 +524,15 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
   final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
 
-  // Helper: LaTeX/Raw code को Clean Student-Readable Text में बदलना
   String _sanitizeMathText(String text) {
     String cleaned = text;
-    // Remove think tags if any
     if (cleaned.contains("</think>")) {
       cleaned = cleaned.split("</think>").last.trim();
     }
-    // Remove LaTeX math delimiters
     cleaned = cleaned.replaceAll(r'$$', '').replaceAll(r'$', '');
     cleaned = cleaned.replaceAll(r'\[', '').replaceAll(r'\]', '');
     cleaned = cleaned.replaceAll(r'\(', '').replaceAll(r'\)', '');
     
-    // Replace common LaTeX math commands with normal readable characters
     cleaned = cleaned.replaceAll(r'\Delta', 'Triangle ');
     cleaned = cleaned.replaceAll(r'\angle', 'Angle ');
     cleaned = cleaned.replaceAll(r'\times', ' × ');
@@ -551,7 +546,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     cleaned = cleaned.replaceAll(r'\degree', '°');
     cleaned = cleaned.replaceAll(r'\circ', '°');
 
-    // Simple regex for \frac{a}{b} -> (a / b)
     cleaned = cleaned.replaceAllMapped(
       RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}'),
       (match) => '(${match.group(1)} / ${match.group(2)})',
@@ -1015,7 +1009,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// 6. ADVANCED AI CLASSROOM & 3D LAB (INTERACTIVE)
+// 6. ADVANCED AI CLASSROOM & 3D LAB
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -1200,7 +1194,7 @@ class WhiteboardPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// 7. EXPANDED CAREER GUIDANCE & ROADMAPS
+// 7. CAREER GUIDANCE & ROADMAPS
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -1290,7 +1284,7 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// 8. DAILY AI PRACTICE QUIZ & TEST SCREEN
+// 8. DAILY QUIZ SCREEN
 class DailyQuizScreen extends StatefulWidget {
   const DailyQuizScreen({super.key});
 
@@ -1410,7 +1404,7 @@ class _DailyQuizScreenState extends State<DailyQuizScreen> {
   }
 }
 
-// 9. PROFILE SCREEN WITH DOUBT HISTORY & STATS
+// 9. PROFILE SCREEN
 class ProfileScreen extends StatelessWidget {
   final VoidCallback onRefresh;
   const ProfileScreen({super.key, required this.onRefresh});
