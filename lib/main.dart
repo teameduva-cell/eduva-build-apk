@@ -1,4 +1,4 @@
-  import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -397,7 +397,7 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// 5. ASK DOUBT SCREEN (GROQ POWERED)
+// 5. ASK DOUBT SCREEN (GROQ ENGINE - LLAMA 3.1 8B INSTANT)
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -479,27 +479,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     });
 
     try {
-      dynamic userContent;
-
-      if (_imageFile != null) {
-        final bytes = await _imageFile!.readAsBytes();
-        final base64Image = base64Encode(bytes);
-        userContent = [
-          {
-            "type": "image_url",
-            "image_url": {
-              "url": "data:image/jpeg;base64,$base64Image"
-            }
-          },
-          {
-            "type": "text",
-            "text": query.isNotEmpty ? query : "कृपया इस प्रश्न को विस्तार से हल करें।"
-          }
-        ];
-      } else {
-        userContent = query;
-      }
-
       final res = await http.post(
         Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
         headers: {
@@ -507,7 +486,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
           'Authorization': 'Bearer $_groqApiKey',
         },
         body: jsonEncode({
-          "model": _imageFile != null ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile",
+          "model": "llama-3.1-8b-instant",
           "messages": [
             {
               "role": "system",
@@ -515,11 +494,11 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
             },
             {
               "role": "user",
-              "content": userContent
+              "content": query.isNotEmpty ? query : "कृपया इस विषय को विस्तार से समझाएं।"
             }
           ],
           "temperature": 0.5,
-          "max_tokens": 1200
+          "max_tokens": 1024
         }),
       ).timeout(const Duration(seconds: 30));
 
@@ -767,4 +746,3 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
-     
