@@ -49,6 +49,7 @@ class EduvaMasterApp extends StatelessWidget {
   }
 }
 
+// Brand Colors & Gradients
 const kEduvaGradient = LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)]);
 const kEduvaPrimary = Color(0xFF4F46E5);
 
@@ -524,6 +525,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
   final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
 
+  // Helper: LaTeX/Raw code को Clean Student-Readable Text में बदलना
   String _sanitizeMathText(String text) {
     String cleaned = text;
     if (cleaned.contains("</think>")) {
@@ -684,7 +686,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               "content": "You are 'Edu Sir', a friendly and expert AI Teacher for Indian students. Subject: $_activeSubject.\n\n"
                   "CRITICAL FORMATTING RULES:\n"
                   "1. NEVER output LaTeX syntax (do NOT use \$, \\frac, \\angle, \\sin, \\cos, \\Delta, \\cdot, \\times, or any backslashes).\n"
-                  "2. Write math in 100% plain, readable school textbook text. For example:\n"
+                  "2. Write math in 100% plain, readable textbook text. For example:\n"
                   "   - Write 'BD / DC' instead of '\\frac{BD}{DC}'\n"
                   "   - Write 'Triangle ABC' instead of '\\Delta ABC'\n"
                   "   - Write 'Angle BAE' instead of '\\angle BAE'\n"
@@ -1009,7 +1011,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// 6. ADVANCED AI CLASSROOM & 3D LAB
+// 6. ADVANCED AI CLASSROOM & 3D LAB (INTERACTIVE)
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -1194,7 +1196,7 @@ class WhiteboardPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// 7. CAREER GUIDANCE & ROADMAPS
+// 7. EXPANDED CAREER GUIDANCE & ROADMAPS
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -1284,7 +1286,7 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// 8. DAILY QUIZ SCREEN
+// 8. DAILY AI PRACTICE QUIZ & TEST SCREEN
 class DailyQuizScreen extends StatefulWidget {
   const DailyQuizScreen({super.key});
 
@@ -1404,7 +1406,7 @@ class _DailyQuizScreenState extends State<DailyQuizScreen> {
   }
 }
 
-// 9. PROFILE SCREEN
+// 9. PROFILE SCREEN WITH DOUBT HISTORY & STATS
 class ProfileScreen extends StatelessWidget {
   final VoidCallback onRefresh;
   const ProfileScreen({super.key, required this.onRefresh});
