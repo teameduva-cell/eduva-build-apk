@@ -378,7 +378,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "⚠️ Note: Firebase OTP Verification will be integrated in production.",
+                "⚠️ Note: Firebase OTP verification will be integrated in production.",
                 style: TextStyle(fontSize: 11, color: Colors.orange),
               ),
             ),
@@ -443,7 +443,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
 // Simple Chat Message Model
 class ChatMessage {
-  final String role; // "user" or "assistant"
+  final String role;
   final String text;
   final File? image;
   ChatMessage({required this.role, required this.text, this.image});
@@ -657,7 +657,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
       ),
       body: Column(
         children: [
-          // Subject Selector Chip Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: SingleChildScrollView(
@@ -678,8 +677,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               ),
             ),
           ),
-
-          // Chat Body Area
           Expanded(
             child: _messages.isEmpty
                 ? _buildEmptyState()
@@ -695,8 +692,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                     },
                   ),
           ),
-
-          // Pending Image Preview Bar
           if (_pendingImage != null)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -711,8 +706,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                 ],
               ),
             ),
-
-          // Input Bar
           Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
@@ -961,7 +954,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
-// 7. CAREER GUIDANCE (Accessible from Profile)
+// 7. CAREER GUIDANCE
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -982,39 +975,148 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// 8. PROFILE SCREEN
+// 8. PROFILE SCREEN (WITH ACHIEVEMENTS & PROGRESS BARS)
 class ProfileScreen extends StatelessWidget {
   final VoidCallback onRefresh;
   const ProfileScreen({super.key, required this.onRefresh});
 
+  Widget _statBox(IconData icon, Color color, String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
+  Widget _subjectBar(String subject, double percent, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(subject, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text("${(percent * 100).toInt()}%", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: percent,
+              minHeight: 7,
+              backgroundColor: Colors.grey.shade200,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const CircleAvatar(radius: 40, backgroundColor: kEduvaPrimary, child: Icon(Icons.person, size: 48, color: Colors.white)),
-            const SizedBox(height: 10),
-            Text(UserState.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text("${UserState.studentClass} • Goal: ${UserState.targetGoal}", style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 20),
-            Card(
-              child: Column(
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
                 children: [
-                  ListTile(leading: const Icon(Icons.bolt, color: Colors.orange), title: Text("Streak: ${UserState.streakDays} Days active")),
-                  ListTile(leading: const Icon(Icons.check_circle, color: Colors.green), title: Text("Doubts Solved: ${UserState.doubtsSolved}")),
+                  const CircleAvatar(radius: 34, backgroundColor: kEduvaPrimary, child: Icon(Icons.person, size: 38, color: Colors.white)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(UserState.name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 6,
+                          children: [
+                            Chip(label: Text(UserState.studentClass, style: const TextStyle(fontSize: 11)), backgroundColor: Colors.white, visualDensity: VisualDensity.compact),
+                            Chip(label: Text(UserState.targetGoal, style: const TextStyle(fontSize: 11)), backgroundColor: Colors.white, visualDensity: VisualDensity.compact),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+              child: Row(
+                children: [
+                  const CircleAvatar(radius: 18, backgroundColor: Color(0xFFEFF6FF), child: Icon(Icons.school, color: kEduvaPrimary, size: 18)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Message from Edu Sir", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text("Great job, ${UserState.name.split(' ')[0]}! Keep the streak going 🔥", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+              child: Row(
+                children: [
+                  _statBox(Icons.local_fire_department, Colors.orange, "${UserState.streakDays}", "Day Streak"),
+                  _statBox(Icons.check_circle, Colors.green, "${UserState.doubtsSolved}", "Doubts Solved"),
+                  _statBox(Icons.star, Colors.amber, "Lvl 1", "Level"),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Subject Wise Progress", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 8),
+                  _subjectBar("Mathematics", 0.72, Colors.indigo),
+                  _subjectBar("Physics", 0.60, Colors.blue),
+                  _subjectBar("Chemistry", 0.55, Colors.teal),
+                  _subjectBar("Biology", 0.68, Colors.pink),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CareerGuidanceScreen())),
                 icon: const Icon(Icons.explore_outlined, color: kEduvaPrimary),
                 label: const Text("Explore Career Guidance", style: TextStyle(color: kEduvaPrimary)),
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
               ),
             ),
           ],
