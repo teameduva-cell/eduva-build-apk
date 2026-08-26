@@ -199,14 +199,22 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-                    child: Image.asset(
-                      'assets/images/edu_sir_board.png',
-                      height: 190,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.school, size: 60, color: kEduvaPrimary)),
+                  Container(
+                    height: 120,
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFDBEAFE),
+                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+                    ),
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.school, size: 55, color: kEduvaPrimary),
+                          SizedBox(height: 4),
+                          Text("Edu Sir • AI Teacher", style: TextStyle(fontWeight: FontWeight.bold, color: kEduvaPrimary)),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -493,7 +501,7 @@ class ChatMessage {
   ChatMessage({required this.role, required this.text, this.image});
 }
 
-// 5. AI CHAT SCREEN (GROQ HYBRID ENGINE)
+// 5. AI CHAT SCREEN (GROQ ENGINE WITH PLAIN MATH FORMATTING)
 class AskDoubtScreen extends StatefulWidget {
   final bool autoOpenCamera;
   final VoidCallback? onCameraConsumed;
@@ -517,8 +525,40 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
   final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
 
-  static const String _textModel = "openai/gpt-oss-20b";
-  static const String _visionModel = "qwen/qwen3.6-27b";
+  // Helper: LaTeX/Raw code को Clean Student-Readable Text में बदलना
+  String _sanitizeMathText(String text) {
+    String cleaned = text;
+    // Remove think tags if any
+    if (cleaned.contains("</think>")) {
+      cleaned = cleaned.split("</think>").last.trim();
+    }
+    // Remove LaTeX math delimiters
+    cleaned = cleaned.replaceAll(r'$$', '').replaceAll(r'$', '');
+    cleaned = cleaned.replaceAll(r'\[', '').replaceAll(r'\]', '');
+    cleaned = cleaned.replaceAll(r'\(', '').replaceAll(r'\)', '');
+    
+    // Replace common LaTeX math commands with normal readable characters
+    cleaned = cleaned.replaceAll(r'\Delta', 'Triangle ');
+    cleaned = cleaned.replaceAll(r'\angle', 'Angle ');
+    cleaned = cleaned.replaceAll(r'\times', ' × ');
+    cleaned = cleaned.replaceAll(r'\cdot', ' · ');
+    cleaned = cleaned.replaceAll(r'\implies', ' ⟹ ');
+    cleaned = cleaned.replaceAll(r'\ge', ' ≥ ');
+    cleaned = cleaned.replaceAll(r'\le', ' ≤ ');
+    cleaned = cleaned.replaceAll(r'\neq', ' ≠ ');
+    cleaned = cleaned.replaceAll(r'\pm', ' ± ');
+    cleaned = cleaned.replaceAll(r'\sqrt', '√');
+    cleaned = cleaned.replaceAll(r'\degree', '°');
+    cleaned = cleaned.replaceAll(r'\circ', '°');
+
+    // Simple regex for \frac{a}{b} -> (a / b)
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}'),
+      (match) => '(${match.group(1)} / ${match.group(2)})',
+    );
+
+    return cleaned.trim();
+  }
 
   @override
   void initState() {
@@ -614,7 +654,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
     try {
       final bool hasImage = imageToSend != null;
-      final String modelToUse = hasImage ? _visionModel : _textModel;
+      final String modelToUse = hasImage ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
 
       dynamic userMessageContent;
       if (hasImage) {
@@ -624,7 +664,12 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         final mimeType = lowerPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
         userMessageContent = [
-          {"type": "text", "text": query.isNotEmpty ? query : "कृपया इस चित्र में दिए गए प्रश्न को विस्तार से हल करें।"},
+          {
+            "type": "text",
+            "text": query.isNotEmpty
+                ? query
+                : "Please solve the question in this image step-by-step in clean, plain readable text without any LaTeX code."
+          },
           {"type": "image_url", "image_url": {"url": "data:$mimeType;base64,$base64Image"}}
         ];
       } else {
@@ -642,20 +687,36 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
           "messages": [
             {
               "role": "system",
-              "content": "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer in simple Hindi/Hinglish."
+              "content": "You are 'Edu Sir', a friendly and expert AI Teacher for Indian students. Subject: $_activeSubject.\n\n"
+                  "CRITICAL FORMATTING RULES:\n"
+                  "1. NEVER output LaTeX syntax (do NOT use \$, \\frac, \\angle, \\sin, \\cos, \\Delta, \\cdot, \\times, or any backslashes).\n"
+                  "2. Write math in 100% plain, readable school textbook text. For example:\n"
+                  "   - Write 'BD / DC' instead of '\\frac{BD}{DC}'\n"
+                  "   - Write 'Triangle ABC' instead of '\\Delta ABC'\n"
+                  "   - Write 'Angle BAE' instead of '\\angle BAE'\n"
+                  "   - Write 'D1 + D2 = (p - r)^2 ≥ 0' instead of LaTeX\n"
+                  "   - Use normal symbols: +, -, *, /, =, ^, ≥, ≤, √, °\n"
+                  "3. Structure your answer with:\n"
+                  "   • Given Data\n"
+                  "   • Key Formula Used\n"
+                  "   • Step-by-Step Explanation / Calculation\n"
+                  "   • Final Answer\n"
+                  "4. Write in easy-to-understand Hindi / Hinglish."
             },
             {"role": "user", "content": userMessageContent}
           ],
-          "temperature": 0.5,
-          "max_tokens": 1024
+          "temperature": 0.4,
+          "max_tokens": 1500
         }),
-      ).timeout(const Duration(seconds: 30));
+      ).timeout(const Duration(seconds: 35));
 
       if (res.statusCode == 200) {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
-        final content = data['choices'][0]['message']['content'];
+        String rawContent = data['choices'][0]['message']['content'];
+        String cleanContent = _sanitizeMathText(rawContent);
+
         setState(() {
-          _messages.add(ChatMessage(role: "assistant", text: content));
+          _messages.add(ChatMessage(role: "assistant", text: cleanContent));
           UserState.doubtsSolved += 1;
           if (query.isNotEmpty) {
             UserState.savedDoubts.insert(0, query);
@@ -1016,7 +1077,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.horizontal(14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1169,7 +1230,7 @@ class CareerGuidanceScreen extends StatelessWidget {
       "title": "Civil Services (IAS / IPS)",
       "exam": "UPSC CSE",
       "duration": "Graduation + 1-2 Yrs Prep",
-      "salary": "Top Government Scale + Authority",
+      "salary": "Top Govt Scale + Authority",
       "steps": ["Complete Any Bachelor Degree", "General Studies + Optional Prep", "Crack Prelims, Mains & Interview", "Join LBSNAA Training"]
     }
   ];
@@ -1194,14 +1255,14 @@ class CareerGuidanceScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(item["title"] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kEduvaPrimary)),
-                    Chip(label: Text(item["salary"] as String, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)), backgroundColor: const Color(0xFFEFF6FF)),
-                  ],
-                ),
+                Text(item["title"] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kEduvaPrimary)),
                 const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                  child: Text(item["salary"] as String, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: kEduvaPrimary)),
+                ),
+                const SizedBox(height: 8),
                 Text("Target Exam: ${item["exam"]}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                 Text("Course Duration: ${item["duration"]}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 const Divider(height: 18),
