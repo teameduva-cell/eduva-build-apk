@@ -1,4 +1,4 @@
-    import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -47,7 +47,7 @@ class EduvaMasterApp extends StatelessWidget {
   }
 }
 
-// Shared gradient used across the app (matches the Edu Sir brand look)
+// Brand Look & Gradients
 const kEduvaGradient = LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF7C3AED)]);
 const kEduvaPrimary = Color(0xFF4F46E5);
 
@@ -78,8 +78,6 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
       ProfileScreen(onRefresh: () => setState(() {})),
     ];
 
-    // Index mapping for the 5 nav slots -> the 4 actual pages
-    // 0 Home, 1 AI Chat, [2 Scan -> opens AI Chat w/ camera], 3 AI Classroom(shown as index2), 4 Profile(shown as index3)
     final pageForNav = {0: 0, 1: 1, 3: 2, 4: 3};
 
     return Scaffold(
@@ -192,11 +190,11 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text("Welcome to", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
-                        const Text("Eduva 鉁�", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                        const Text("Eduva ✨", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
                         const SizedBox(height: 8),
                         const Text("Eduva is an AI-powered learning platform built to make quality education simple, interactive and accessible for every student.", style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4)),
                         const SizedBox(height: 10),
-                        const Text("That's why we created Edu Sir 鈥� your personal AI teacher.", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kEduvaPrimary)),
+                        const Text("That's why we created Edu Sir — your personal AI teacher.", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kEduvaPrimary)),
                       ],
                     ),
                   ),
@@ -284,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              const Text("Welcome Back! 馃憢", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text("Welcome Back! 👋", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               TextField(controller: _emailController, decoration: InputDecoration(hintText: "Email or Phone", prefixIcon: const Icon(Icons.email_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
               const SizedBox(height: 14),
@@ -365,7 +363,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             TextField(controller: _nameCtrl, decoration: InputDecoration(hintText: "Full Name", prefixIcon: const Icon(Icons.person_outline), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: _classVal,
+              value: _classVal,
               decoration: InputDecoration(prefixIcon: const Icon(Icons.school_outlined), filled: true, fillColor: const Color(0xFFF8FAFC), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14))),
               items: ["Class 9th", "Class 10th", "Class 11th", "Class 12th", "Dropper"].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
               onChanged: (v) => setState(() => _classVal = v!),
@@ -380,7 +378,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "鈿狅笍 Note: OTP verification abhi implement nahi hai (is啶曕 啶侧た啶� Firebase Phone Auth chahiye).",
+                "⚠️ Note: Firebase OTP Verification will be integrated in production.",
                 style: TextStyle(fontSize: 11, color: Colors.orange),
               ),
             ),
@@ -443,7 +441,7 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// Simple chat message model for the AI Chat screen
+// Simple Chat Message Model
 class ChatMessage {
   final String role; // "user" or "assistant"
   final String text;
@@ -451,7 +449,7 @@ class ChatMessage {
   ChatMessage({required this.role, required this.text, this.image});
 }
 
-// 5. AI CHAT SCREEN (GROQ ENGINE - chat style UI)
+// 5. AI CHAT SCREEN (GROQ HYBRID ENGINE)
 class AskDoubtScreen extends StatefulWidget {
   final bool autoOpenCamera;
   final VoidCallback? onCameraConsumed;
@@ -473,7 +471,6 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   String _activeSubject = "Mathematics";
   final List<ChatMessage> _messages = [];
 
-  // 鈿狅笍 TODO: Isse app se hata kar apne backend server pe le jao (production ke liye zaroori).
   final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
 
   static const String _textModel = "openai/gpt-oss-20b";
@@ -558,13 +555,13 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
 
     if (query.isEmpty && imageToSend == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("啶曕啶く啶� 啶膏さ啶距げ 啶侧た啶栢啶�, 啶ぜ啷嬥啷� 啶侧啶� 啶ぞ 啶啶侧啶� 啶啶涏啶�!")),
+        const SnackBar(content: Text("कृपया सवाल लिखें, फ़ोटो लें या बोलकर पूछें!")),
       );
       return;
     }
 
     setState(() {
-      _messages.add(ChatMessage(role: "user", text: query.isNotEmpty ? query : "(Photo)", image: imageToSend));
+      _messages.add(ChatMessage(role: "user", text: query.isNotEmpty ? query : "(Photo Attached)", image: imageToSend));
       _controller.clear();
       _pendingImage = null;
       _isLoading = true;
@@ -583,7 +580,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         final mimeType = lowerPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
         userMessageContent = [
-          {"type": "text", "text": query.isNotEmpty ? query : "啶曕啶く啶� 啶囙じ 啶掂た啶粪く 啶曕 啶掂た啶膏啶むぞ啶� 啶膏 啶膏ぎ啶澿ぞ啶忇啷�"},
+          {"type": "text", "text": query.isNotEmpty ? query : "कृपया इस चित्र में दिए गए प्रश्न को विस्तार से हल करें।"},
           {"type": "image_url", "image_url": {"url": "data:$mimeType;base64,$base64Image"}}
         ];
       } else {
@@ -606,7 +603,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
             {"role": "user", "content": userMessageContent}
           ],
           "temperature": 0.5,
-          "max_completion_tokens": 1024
+          "max_tokens": 1024
         }),
       ).timeout(const Duration(seconds: 30));
 
@@ -619,12 +616,12 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         });
       } else {
         setState(() {
-          _messages.add(ChatMessage(role: "assistant", text: "鈿狅笍 Groq Server Error (${res.statusCode}):\n${res.body}"));
+          _messages.add(ChatMessage(role: "assistant", text: "⚠️ Groq Server Error (${res.statusCode}):\n${res.body}"));
         });
       }
     } catch (e) {
       setState(() {
-        _messages.add(ChatMessage(role: "assistant", text: "鈿狅笍 Connection Error: $e\n啶曕啶く啶� 啶囙啶熰ぐ啶ㄠ啶� 啶曕え啷囙啷嵿ざ啶� 啶溹ぞ啶傕啷囙啷�"));
+        _messages.add(ChatMessage(role: "assistant", text: "⚠️ Connection Error: $e\nकृपया इंटरनेट कनेक्शन जांचें।"));
       });
     } finally {
       setState(() => _isLoading = false);
@@ -660,7 +657,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
       ),
       body: Column(
         children: [
-          // Subject selector
+          // Subject Selector Chip Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: SingleChildScrollView(
@@ -682,7 +679,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
             ),
           ),
 
-          // Chat body
+          // Chat Body Area
           Expanded(
             child: _messages.isEmpty
                 ? _buildEmptyState()
@@ -699,7 +696,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                   ),
           ),
 
-          // Pending image preview
+          // Pending Image Preview Bar
           if (_pendingImage != null)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -715,7 +712,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               ),
             ),
 
-          // Input bar
+          // Input Bar
           Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
@@ -763,7 +760,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: _isLoading
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.send, color: Colors.white, size: 20),
                   ),
                 ),
@@ -811,8 +808,8 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
               children: [
                 CircleAvatar(radius: 36, backgroundColor: const Color(0xFFEFF6FF), child: Icon(Icons.school, color: kEduvaPrimary, size: 36)),
                 const SizedBox(height: 10),
-                const Text("Edu Sir aapka intezaar kar raha hai!", style: TextStyle(color: Colors.grey)),
-                const Text("Apna sawaal type karein, bolein ya photo khinche.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const Text("Edu Sir आपका इंतज़ार कर रहा है!", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                const Text("अपना सवाल टाइप करें, बोलें या फ़ोटो खींचें।", style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
           ),
@@ -844,7 +841,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                   ),
                 Container(
                   padding: const EdgeInsets.all(12),
-                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.76),
                   decoration: BoxDecoration(
                     gradient: isUser ? kEduvaGradient : null,
                     color: isUser ? null : Colors.white,
@@ -865,6 +862,29 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                         msg.text,
                         style: TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.4),
                       ),
+                      if (!isUser) ...[
+                        const Divider(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: msg.text));
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("समाधान कॉपी हो गया!")));
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(2.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.copy, size: 14, color: kEduvaPrimary),
+                                  SizedBox(width: 4),
+                                  Text("Copy", style: TextStyle(fontSize: 11, color: kEduvaPrimary, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      ]
                     ],
                   ),
                 ),
@@ -941,7 +961,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   }
 }
 
-// 7. CAREER GUIDANCE (accessible from Profile)
+// 7. CAREER GUIDANCE (Accessible from Profile)
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -953,8 +973,8 @@ class CareerGuidanceScreen extends StatelessWidget {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills 鈥� 鈧�12 LPA")),
-            ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills 鈥� 鈧�10 LPA")),
+            ListTile(leading: Icon(Icons.engineering, color: Colors.blue), title: Text("AI Engineer Roadmap"), subtitle: Text("12 Skills • ₹12 LPA")),
+            ListTile(leading: Icon(Icons.medical_services, color: Colors.green), title: Text("Doctor (MBBS) Roadmap"), subtitle: Text("15 Skills • ₹10 LPA")),
           ],
         ),
       ),
@@ -978,7 +998,7 @@ class ProfileScreen extends StatelessWidget {
             const CircleAvatar(radius: 40, backgroundColor: kEduvaPrimary, child: Icon(Icons.person, size: 48, color: Colors.white)),
             const SizedBox(height: 10),
             Text(UserState.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text("${UserState.studentClass} 鈥� Goal: ${UserState.targetGoal}", style: const TextStyle(color: Colors.grey)),
+            Text("${UserState.studentClass} • Goal: ${UserState.targetGoal}", style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 20),
             Card(
               child: Column(
@@ -1002,4 +1022,4 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-}    
+}
