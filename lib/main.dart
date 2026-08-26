@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -397,7 +397,7 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// 5. ASK DOUBT SCREEN (GROQ ENGINE)
+// 5. ASK DOUBT SCREEN (GROQ POWERED)
 class AskDoubtScreen extends StatefulWidget {
   const AskDoubtScreen({super.key});
 
@@ -416,8 +416,8 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   String? _response;
   String _activeSubject = "Mathematics";
 
-  // ⚠️ अपनी Groq Key यहाँ डालें:
-  final String _groqApiKey = "YOUR_GROQ_API_KEY_HERE";
+  // आपकी Groq API Key
+  final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
 
   Future<void> _openCamera() async {
     try {
@@ -479,23 +479,26 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
     });
 
     try {
-      List<Map<String, dynamic>> userContent = [];
+      dynamic userContent;
 
       if (_imageFile != null) {
         final bytes = await _imageFile!.readAsBytes();
         final base64Image = base64Encode(bytes);
-        userContent.add({
-          "type": "image_url",
-          "image_url": {
-            "url": "data:image/jpeg;base64,$base64Image"
+        userContent = [
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "data:image/jpeg;base64,$base64Image"
+            }
+          },
+          {
+            "type": "text",
+            "text": query.isNotEmpty ? query : "कृपया इस प्रश्न को विस्तार से हल करें।"
           }
-        });
+        ];
+      } else {
+        userContent = query;
       }
-
-      userContent.add({
-        "type": "text",
-        "text": query.isNotEmpty ? query : "कृपया इस प्रश्न को विस्तार से हल करें।"
-      });
 
       final res = await http.post(
         Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
@@ -508,7 +511,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
           "messages": [
             {
               "role": "system",
-              "content": "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer in simple Hinglish/Hindi/English."
+              "content": "You are Edu Sir, an expert, encouraging AI Teacher for Indian students. Subject: $_activeSubject. Provide a crystal-clear, step-by-step easy explanation with formulas and final answer in simple Hindi/Hinglish."
             },
             {
               "role": "user",
@@ -764,3 +767,4 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
+     
