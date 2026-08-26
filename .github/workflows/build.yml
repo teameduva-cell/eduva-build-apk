@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Release APK
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           flutter-version: '3.22.2'
           channel: 'stable'
 
-      - name: Create Folders
+      - name: Create Missing Folders
         run: mkdir -p assets/images
 
       - name: Get Dependencies
