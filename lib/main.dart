@@ -82,6 +82,7 @@ class _MainDashboardShellState extends State<MainDashboardShell> {
     ];
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: pages[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -152,6 +153,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Row(
           children: [
@@ -493,7 +495,9 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 }
 
-// Simple Chat Message Model
+// 5. AI CHAT SCREEN (PRACTICE MODE + DIRECT ANSWER)
+enum ChatMode { direct, practice }
+
 class ChatMessage {
   final String role;
   final String text;
@@ -501,7 +505,6 @@ class ChatMessage {
   ChatMessage({required this.role, required this.text, this.image});
 }
 
-// 5. AI CHAT SCREEN (PLAIN MATH STUDENT READABLE FORMAT)
 class AskDoubtScreen extends StatefulWidget {
   final bool autoOpenCamera;
   final VoidCallback? onCameraConsumed;
@@ -521,40 +524,14 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   bool _isListening = false;
   bool _isLoading = false;
   String _activeSubject = "Mathematics";
+  ChatMode _mode = ChatMode.direct;
+  int _practiceAttempts = 0;
   final List<ChatMessage> _messages = [];
 
   final String _groqApiKey = "gsk_" + "rqSD0CJstk1b1sPiB1Xn" + "WGdyb3FY3A5mbYtcwy" + "Le1ch2gMoV1GE3";
-
-  // Helper: LaTeX/Raw code को Clean Student-Readable Text में बदलना
-  String _sanitizeMathText(String text) {
-    String cleaned = text;
-    if (cleaned.contains("</think>")) {
-      cleaned = cleaned.split("</think>").last.trim();
-    }
-    cleaned = cleaned.replaceAll(r'$$', '').replaceAll(r'$', '');
-    cleaned = cleaned.replaceAll(r'\[', '').replaceAll(r'\]', '');
-    cleaned = cleaned.replaceAll(r'\(', '').replaceAll(r'\)', '');
-    
-    cleaned = cleaned.replaceAll(r'\Delta', 'Triangle ');
-    cleaned = cleaned.replaceAll(r'\angle', 'Angle ');
-    cleaned = cleaned.replaceAll(r'\times', ' × ');
-    cleaned = cleaned.replaceAll(r'\cdot', ' · ');
-    cleaned = cleaned.replaceAll(r'\implies', ' ⟹ ');
-    cleaned = cleaned.replaceAll(r'\ge', ' ≥ ');
-    cleaned = cleaned.replaceAll(r'\le', ' ≤ ');
-    cleaned = cleaned.replaceAll(r'\neq', ' ≠ ');
-    cleaned = cleaned.replaceAll(r'\pm', ' ± ');
-    cleaned = cleaned.replaceAll(r'\sqrt', '√');
-    cleaned = cleaned.replaceAll(r'\degree', '°');
-    cleaned = cleaned.replaceAll(r'\circ', '°');
-
-    cleaned = cleaned.replaceAllMapped(
-      RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}'),
-      (match) => '(${match.group(1)} / ${match.group(2)})',
-    );
-
-    return cleaned.trim();
-  }
+  static const String _textModel = "llama-3.3-70b-versatile";
+  static const String _visionModel = "llama-3.2-11b-vision-preview";
+  static const int _maxPracticeAttempts = 4;
 
   @override
   void initState() {
@@ -590,38 +567,99 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   Future<void> _openCamera() async {
     try {
       final XFile? photo = await _picker.pickImage(source: ImageSource.camera, imageQuality: 70);
-      if (photo != null) {
-        setState(() => _pendingImage = File(photo.path));
-      }
+      if (photo != null) setState(() => _pendingImage = File(photo.path));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Camera error: $e")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Camera error: $e")));
     }
   }
 
   Future<void> _openGallery() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-      if (image != null) {
-        setState(() => _pendingImage = File(image.path));
-      }
+      if (image != null) setState(() => _pendingImage = File(image.path));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gallery error: $e")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gallery error: $e")));
     }
   }
 
   Future<void> _listenVoice() async {
-    if (!_isListening) {
-      bool available = await _speech.initialize();
-      if (available) {
-        setState(() => _isListening = true);
-        _speech.listen(onResult: (val) {
-          setState(() => _controller.text = val.recognizedWords);
-        });
+    try {
+      if (!_isListening) {
+        bool available = await _speech.initialize();
+        if (available) {
+          setState(() => _isListening = true);
+          _speech.listen(onResult: (val) {
+            setState(() => _controller.text = val.recognizedWords);
+          });
+        }
+      } else {
+        setState(() => _isListening = false);
+        _speech.stop();
       }
-    } else {
+    } catch (e) {
       setState(() => _isListening = false);
-      _speech.stop();
     }
+  }
+
+  String _cleanResponse(String raw) {
+    String cleaned = raw.replaceAll(RegExp(r'<think>[\s\S]*?</think>', caseSensitive: false), '').trim();
+    cleaned = cleaned.replaceAll(r'$$', '').replaceAll(r'$', '');
+    cleaned = cleaned.replaceAll(r'\[', '').replaceAll(r'\]', '');
+    cleaned = cleaned.replaceAll(r'\(', '').replaceAll(r'\)', '');
+    cleaned = cleaned.replaceAll(r'\Delta', 'Triangle ');
+    cleaned = cleaned.replaceAll(r'\angle', 'Angle ');
+    cleaned = cleaned.replaceAll(r'\times', ' × ');
+    cleaned = cleaned.replaceAll(r'\cdot', ' · ');
+    cleaned = cleaned.replaceAll(r'\implies', ' ⟹ ');
+    cleaned = cleaned.replaceAll(r'\ge', ' ≥ ');
+    cleaned = cleaned.replaceAll(r'\le', ' ≤ ');
+    cleaned = cleaned.replaceAll(r'\neq', ' ≠ ');
+    cleaned = cleaned.replaceAll(r'\pm', ' ± ');
+    cleaned = cleaned.replaceAll(r'\sqrt', '√');
+    cleaned = cleaned.replaceAll(r'\degree', '°');
+    cleaned = cleaned.replaceAll(r'\circ', '°');
+
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}'),
+      (match) => '(${match.group(1)} / ${match.group(2)})',
+    );
+    return cleaned.trim();
+  }
+
+  void _startNewQuestion() {
+    setState(() => _practiceAttempts = 0);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("नया सवाल शुरू — Attempt counter रिसेट हो गया।"), duration: Duration(seconds: 2)),
+    );
+  }
+
+  String _systemPromptFor(ChatMode mode) {
+    final base = "You are 'Edu Sir', a friendly and expert AI Teacher for Indian students. Subject: $_activeSubject.\n"
+        "IMPORTANT RULES:\n"
+        "1. NEVER use LaTeX syntax (do NOT use \$, \\frac, \\angle, \\sin, \\cos, \\Delta, \\times, or any backslashes).\n"
+        "2. Write math in 100% plain, readable textbook text (e.g. 'BD / DC', 'Triangle ABC', 'Angle BAE', '√', '°', '≥', '≤').\n"
+        "3. Reply in simple, encouraging Hindi / Hinglish.";
+
+    if (mode == ChatMode.direct) {
+      return "$base\n\nDIRECT ANSWER MODE: Provide the complete step-by-step clear calculation and final answer directly.";
+    }
+
+    return "$base\n\n"
+        "PRACTICE MODE RULES:\n"
+        "1. This is attempt number ${_practiceAttempts + 1} for the student on this question (Max $_maxPracticeAttempts attempts).\n"
+        "2. Attempts 1, 2, or 3: Do NOT give the final answer or full method. Give ONE helpful hint or ask a guiding question to nudge the student toward the next step.\n"
+        "3. If the student's answer is correct, congratulate them, give a short recap, and give 2 NEW similar practice questions.\n"
+        "4. Attempt $_maxPracticeAttempts or higher: Provide the complete step-by-step solution clearly, and then provide 2 similar practice questions.";
+  }
+
+  List<Map<String, dynamic>> _buildApiMessages() {
+    final history = _messages.map((m) {
+      return {"role": m.role == "user" ? "user" : "assistant", "content": m.text};
+    }).toList();
+    return [
+      {"role": "system", "content": _systemPromptFor(_mode)},
+      ...history,
+    ];
   }
 
   void _sendQuickPrompt(String prompt) {
@@ -645,31 +683,26 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
       _controller.clear();
       _pendingImage = null;
       _isLoading = true;
+      if (_mode == ChatMode.practice) _practiceAttempts++;
     });
     _scrollToBottom();
 
     try {
       final bool hasImage = imageToSend != null;
-      final String modelToUse = hasImage ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
+      final String modelToUse = hasImage ? _visionModel : _textModel;
 
-      dynamic userMessageContent;
+      final apiMessages = _buildApiMessages();
       if (hasImage) {
         final bytes = await imageToSend.readAsBytes();
         final base64Image = base64Encode(bytes);
-        final lowerPath = imageToSend.path.toLowerCase();
-        final mimeType = lowerPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
-
-        userMessageContent = [
-          {
-            "type": "text",
-            "text": query.isNotEmpty
-                ? query
-                : "Please solve the question in this image step-by-step in clean, plain readable text without any LaTeX code."
-          },
-          {"type": "image_url", "image_url": {"url": "data:$mimeType;base64,$base64Image"}}
-        ];
-      } else {
-        userMessageContent = query;
+        final mimeType = imageToSend.path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        apiMessages[apiMessages.length - 1] = {
+          "role": "user",
+          "content": [
+            {"type": "text", "text": query.isNotEmpty ? query : "Please solve or guide me through the question in this image in plain readable text without LaTeX."},
+            {"type": "image_url", "image_url": {"url": "data:$mimeType;base64,$base64Image"}}
+          ]
+        };
       }
 
       final res = await http.post(
@@ -680,43 +713,19 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         },
         body: jsonEncode({
           "model": modelToUse,
-          "messages": [
-            {
-              "role": "system",
-              "content": "You are 'Edu Sir', a friendly and expert AI Teacher for Indian students. Subject: $_activeSubject.\n\n"
-                  "CRITICAL FORMATTING RULES:\n"
-                  "1. NEVER output LaTeX syntax (do NOT use \$, \\frac, \\angle, \\sin, \\cos, \\Delta, \\cdot, \\times, or any backslashes).\n"
-                  "2. Write math in 100% plain, readable textbook text. For example:\n"
-                  "   - Write 'BD / DC' instead of '\\frac{BD}{DC}'\n"
-                  "   - Write 'Triangle ABC' instead of '\\Delta ABC'\n"
-                  "   - Write 'Angle BAE' instead of '\\angle BAE'\n"
-                  "   - Write 'D1 + D2 = (p - r)^2 ≥ 0' instead of LaTeX\n"
-                  "   - Use normal symbols: +, -, *, /, =, ^, ≥, ≤, √, °\n"
-                  "3. Structure your answer with:\n"
-                  "   • Given Data\n"
-                  "   • Key Formula Used\n"
-                  "   • Step-by-Step Explanation / Calculation\n"
-                  "   • Final Answer\n"
-                  "4. Write in easy-to-understand Hindi / Hinglish."
-            },
-            {"role": "user", "content": userMessageContent}
-          ],
+          "messages": apiMessages,
           "temperature": 0.4,
-          "max_tokens": 1500
+          "max_tokens": 1500,
         }),
       ).timeout(const Duration(seconds: 35));
 
       if (res.statusCode == 200) {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
-        String rawContent = data['choices'][0]['message']['content'];
-        String cleanContent = _sanitizeMathText(rawContent);
-
+        final content = data['choices'][0]['message']['content'];
         setState(() {
-          _messages.add(ChatMessage(role: "assistant", text: cleanContent));
+          _messages.add(ChatMessage(role: "assistant", text: _cleanResponse(content)));
           UserState.doubtsSolved += 1;
-          if (query.isNotEmpty) {
-            UserState.savedDoubts.insert(0, query);
-          }
+          if (query.isNotEmpty) UserState.savedDoubts.insert(0, query);
         });
       } else {
         setState(() {
@@ -750,121 +759,187 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          if (_mode == ChatMode.practice)
+            TextButton.icon(
+              onPressed: _startNewQuestion,
+              icon: const Icon(Icons.refresh, size: 16, color: kEduvaPrimary),
+              label: const Text("New Q", style: TextStyle(color: kEduvaPrimary, fontSize: 12)),
+            ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black87),
             onSelected: (v) {
-              if (v == "clear") setState(() => _messages.clear());
+              if (v == "clear") setState(() { _messages.clear(); _practiceAttempts = 0; });
             },
             itemBuilder: (_) => [const PopupMenuItem(value: "clear", child: Text("Clear Chat"))],
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: ["Mathematics", "Physics", "Chemistry", "Biology"].map((sub) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(sub, style: const TextStyle(fontSize: 12)),
-                      selected: _activeSubject == sub,
-                      selectedColor: kEduvaPrimary,
-                      labelStyle: TextStyle(color: _activeSubject == sub ? Colors.white : Colors.black87),
-                      onSelected: (val) => setState(() => _activeSubject = sub),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Mode Toggle
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(14)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() { _mode = ChatMode.direct; }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _mode == ChatMode.direct ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: _mode == ChatMode.direct ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)] : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.flash_on, size: 16, color: _mode == ChatMode.direct ? kEduvaPrimary : Colors.grey),
+                              const SizedBox(width: 6),
+                              Text("Direct Answer", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _mode == ChatMode.direct ? kEduvaPrimary : Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                }).toList(),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() { _mode = ChatMode.practice; _practiceAttempts = 0; }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _mode == ChatMode.practice ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: _mode == ChatMode.practice ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)] : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.fitness_center, size: 16, color: _mode == ChatMode.practice ? kEduvaPrimary : Colors.grey),
+                              const SizedBox(width: 6),
+                              Text("Practice Mode", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _mode == ChatMode.practice ? kEduvaPrimary : Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: _messages.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(14),
-                    itemCount: _messages.length + (_isLoading ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == _messages.length) {
-                        return _buildTypingBubble();
-                      }
-                      return _buildMessageBubble(_messages[index]);
-                    },
-                  ),
-          ),
-          if (_pendingImage != null)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+
+            if (_mode == ChatMode.practice)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text("Attempt ${_practiceAttempts.clamp(0, _maxPracticeAttempts)} / $_maxPracticeAttempts", style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+              ),
+
+            // Subject Chips
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: ["Mathematics", "Physics", "Chemistry", "Biology"].map((sub) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(sub, style: const TextStyle(fontSize: 12)),
+                        selected: _activeSubject == sub,
+                        selectedColor: kEduvaPrimary,
+                        labelStyle: TextStyle(color: _activeSubject == sub ? Colors.white : Colors.black87),
+                        onSelected: (val) => setState(() => _activeSubject = sub),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            // Messages View
+            Expanded(
+              child: _messages.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(14),
+                      itemCount: _messages.length + (_isLoading ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _messages.length) return _buildTypingBubble();
+                        return _buildMessageBubble(_messages[index]);
+                      },
+                    ),
+            ),
+
+            if (_pendingImage != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(_pendingImage!, height: 40, width: 40, fit: BoxFit.cover)),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text("Image attached", style: TextStyle(fontWeight: FontWeight.w600, color: kEduvaPrimary))),
+                    IconButton(icon: const Icon(Icons.close, size: 18, color: Colors.red), onPressed: () => setState(() => _pendingImage = null)),
+                  ],
+                ),
+              ),
+
+            // Input Row
+            Padding(
+              padding: const EdgeInsets.all(10),
               child: Row(
                 children: [
-                  ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(_pendingImage!, height: 40, width: 40, fit: BoxFit.cover)),
-                  const SizedBox(width: 10),
-                  const Expanded(child: Text("Image attached", style: TextStyle(fontWeight: FontWeight.w600, color: kEduvaPrimary))),
-                  IconButton(icon: const Icon(Icons.close, size: 18, color: Colors.red), onPressed: () => setState(() => _pendingImage = null)),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.grey.shade300)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              decoration: InputDecoration(
+                                hintText: _mode == ChatMode.practice ? "अपना जवाब या सवाल पूछें..." : "Ask anything...",
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          IconButton(icon: Icon(_isListening ? Icons.mic : Icons.mic_none, color: _isListening ? Colors.red : Colors.grey.shade600, size: 20), onPressed: _listenVoice),
+                          IconButton(icon: Icon(Icons.camera_alt_outlined, color: Colors.grey.shade600, size: 20), onPressed: _openCamera),
+                          IconButton(icon: Icon(Icons.photo_library_outlined, color: Colors.grey.shade600, size: 20), onPressed: _openGallery),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _isLoading ? null : _solveWithAI,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: _isLoading ? null : kEduvaGradient,
+                        color: _isLoading ? Colors.grey.shade300 : null,
+                        shape: BoxShape.circle,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.send, color: Colors.white, size: 20),
+                    ),
+                  ),
                 ],
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            decoration: const InputDecoration(hintText: "Ask anything...", border: InputBorder.none),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(_isListening ? Icons.mic : Icons.mic_none, color: _isListening ? Colors.red : Colors.grey.shade600, size: 20),
-                          onPressed: _listenVoice,
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.camera_alt_outlined, color: Colors.grey.shade600, size: 20),
-                          onPressed: _openCamera,
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.photo_library_outlined, color: Colors.grey.shade600, size: 20),
-                          onPressed: _openGallery,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _isLoading ? null : _solveWithAI,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: _isLoading ? null : kEduvaGradient,
-                      color: _isLoading ? Colors.grey.shade300 : null,
-                      shape: BoxShape.circle,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.send, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -882,7 +957,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Try asking Edu Sir", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                Text(_mode == ChatMode.practice ? "Practice Mode ON — Step-by-step Hints" : "Try asking Edu Sir", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -949,16 +1024,10 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (msg.image != null) ...[
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.file(msg.image!, height: 140, fit: BoxFit.cover),
-                        ),
+                        ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.file(msg.image!, height: 140, fit: BoxFit.cover)),
                         const SizedBox(height: 6),
                       ],
-                      SelectableText(
-                        msg.text,
-                        style: TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.4),
-                      ),
+                      SelectableText(msg.text, style: TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.4)),
                       if (!isUser) ...[
                         const Divider(height: 16),
                         Align(
@@ -1011,7 +1080,7 @@ class _AskDoubtScreenState extends State<AskDoubtScreen> {
   }
 }
 
-// 6. ADVANCED AI CLASSROOM & 3D LAB (INTERACTIVE)
+// 6. AI CLASSROOM & 3D LAB
 class AIClassroomScreen extends StatefulWidget {
   const AIClassroomScreen({super.key});
 
@@ -1034,6 +1103,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text("AI Classroom & 3D Lab"), backgroundColor: Colors.white),
       body: Column(
         children: [
@@ -1073,7 +1143,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14), // <---- एरर यहीं ठीक की गई है 
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1196,7 +1266,7 @@ class WhiteboardPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// 7. EXPANDED CAREER GUIDANCE & ROADMAPS
+// 7. CAREER GUIDANCE & ROADMAPS
 class CareerGuidanceScreen extends StatelessWidget {
   const CareerGuidanceScreen({super.key});
 
@@ -1234,6 +1304,7 @@ class CareerGuidanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text("Career Roadmaps & Guidance"), backgroundColor: Colors.white),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -1286,7 +1357,7 @@ class CareerGuidanceScreen extends StatelessWidget {
   }
 }
 
-// 8. DAILY AI PRACTICE QUIZ & TEST SCREEN
+// 8. DAILY 5-MIN QUIZ
 class DailyQuizScreen extends StatefulWidget {
   const DailyQuizScreen({super.key});
 
@@ -1321,6 +1392,7 @@ class _DailyQuizScreenState extends State<DailyQuizScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text("Daily 5-Min Quiz"), backgroundColor: Colors.white),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -1406,7 +1478,7 @@ class _DailyQuizScreenState extends State<DailyQuizScreen> {
   }
 }
 
-// 9. PROFILE SCREEN WITH DOUBT HISTORY & STATS
+// 9. PROFILE SCREEN
 class ProfileScreen extends StatelessWidget {
   final VoidCallback onRefresh;
   const ProfileScreen({super.key, required this.onRefresh});
@@ -1455,6 +1527,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(title: const Text("Profile & History"), backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
@@ -1463,10 +1536,7 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(18),
-              ),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(18)),
               child: Row(
                 children: [
                   const CircleAvatar(radius: 34, backgroundColor: kEduvaPrimary, child: Icon(Icons.person, size: 38, color: Colors.white)),
