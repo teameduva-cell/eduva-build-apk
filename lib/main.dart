@@ -1073,7 +1073,7 @@ class _AIClassroomScreenState extends State<AIClassroomScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.horizontal(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14), // <---- एरर यहीं ठीक की गई है 
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
